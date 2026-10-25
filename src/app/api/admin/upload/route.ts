@@ -30,22 +30,23 @@ function looksRight(head: Buffer, ext: string) {
 
 const fail = (error: string, status: number) => Response.json({ error }, { status });
 
-/** PUT /api/admin/upload?id=<video id>&kind=video|poster with the raw file as the body. */
+/** PUT /api/admin/upload?id=<video or skill id>&kind=video|poster|icon with the raw file as the body. */
 export async function PUT(req: Request) {
   if (!isAdmin(req)) return fail("Not signed in.", 401);
   const url = new URL(req.url);
   const id = url.searchParams.get("id") ?? "";
   const kind = url.searchParams.get("kind");
   const type = TYPES[req.headers.get("content-type")?.split(";")[0] ?? ""];
-  if (!type || type.kind !== kind) return fail(kind === "poster" ? "Poster must be JPG, PNG or WebP." : "Video must be MP4, WebM or MOV.", 415);
-  const max = kind === "video" ? LIMITS.videoBytes : LIMITS.posterBytes;
+  const okType = kind === "icon" ? type?.ext === "png" : type && type.kind === kind;
+  if (!type || !okType) return fail(kind === "icon" ? "Icon must be a PNG." : kind === "poster" ? "Poster must be JPG, PNG or WebP." : "Video must be MP4, WebM or MOV.", 415);
+  const max = kind === "video" ? LIMITS.videoBytes : kind === "icon" ? LIMITS.iconBytes : LIMITS.posterBytes;
   if (Number(req.headers.get("content-length")) > max) return fail(`File is too large (max ${max / 1024 / 1024} MB).`, 413);
   if (!req.body) return fail("Empty upload.", 400);
 
   const precheck = await getContent();
-  const slot = precheck.sections.flatMap((s) => s.videos).find((v) => v.id === id);
-  if (!slot) return fail("Video slot not found. Wait for the page to finish saving, then try again.", 404);
-  if (kind === "video" && !slot.file && uploadedCount(precheck) >= LIMITS.uploads) return fail(`Limit reached: ${LIMITS.uploads} videos. Remove a video file first.`, 409);
+  const slot = kind === "icon" ? precheck.about.skills.find((k) => k.id === id) : precheck.sections.flatMap((s) => s.videos).find((v) => v.id === id);
+  if (!slot) return fail("Slot not found. Wait for the page to finish saving, then try again.", 404);
+  if (kind === "video" && !(slot as { file: string | null }).file && uploadedCount(precheck) >= LIMITS.uploads) return fail(`Limit reached: ${LIMITS.uploads} videos. Remove a video file first.`, 409);
 
   await fs.mkdir(UPLOADS, { recursive: true });
   const tmp = path.join(UPLOADS, `.tmp-${randomBytes(6).toString("hex")}`);
@@ -62,26 +63,33 @@ export async function PUT(req: Request) {
       createWriteStream(tmp),
     );
     const fh = await fs.open(tmp, "r");
-    const head = Buffer.alloc(16);
-    await fh.read(head, 0, 16, 0);
+    const head = Buffer.alloc(32);
+    await fh.read(head, 0, 32, 0);
     await fh.close();
     if (!looksRight(head, type.ext)) throw new Error("bad type");
+    if (kind === "icon") {
+      const w = head.readUInt32BE(16), h = head.readUInt32BE(20); // PNG IHDR
+      if (w !== h) throw new Error(`Icon must be square (this one is ${w}×${h}px).`);
+      if (w < LIMITS.iconMin || w > LIMITS.iconMax) throw new Error(`Icon must be ${LIMITS.iconMin} to ${LIMITS.iconMax}px (this one is ${w}px).`);
+    }
   } catch (e) {
     await fs.unlink(tmp).catch(() => {});
-    return fail((e as Error).message === "too large" ? "File is too large." : "That file is not a valid " + type.ext.toUpperCase() + ".", 400);
+    const m = (e as Error).message;
+    return fail(m === "too large" ? "File is too large." : m === "bad type" ? "That file is not a valid " + type.ext.toUpperCase() + "." : m, 400);
   }
 
   return withLock(async () => {
     const content = await getContent();
-    const video = content.sections.flatMap((s) => s.videos).find((v) => v.id === id);
-    if (!video || (kind === "video" && !video.file && uploadedCount(content) >= LIMITS.uploads)) {
+    const video = kind === "icon" ? content.about.skills.find((k) => k.id === id) : content.sections.flatMap((s) => s.videos).find((v) => v.id === id);
+    if (!video || (kind === "video" && !(video as { file: string | null }).file && uploadedCount(content) >= LIMITS.uploads)) {
       await fs.unlink(tmp).catch(() => {});
       return fail(video ? "Video limit reached." : "Video slot was removed.", video ? 409 : 404);
     }
     const name = `${id}-${randomBytes(3).toString("hex")}.${type.ext}`;
     await fs.rename(tmp, path.join(UPLOADS, name));
-    if (kind === "video") video.file = name;
-    else video.poster = name;
+    if (kind === "icon") (video as { icon: string | null }).icon = name;
+    else if (kind === "video") (video as { file: string | null }).file = name;
+    else (video as { poster: string | null }).poster = name;
     await saveContent(content); // also deletes the file this replaced
     revalidatePath("/");
     return Response.json({ content });
@@ -96,10 +104,16 @@ export async function DELETE(req: Request) {
   const kind = url.searchParams.get("kind");
   return withLock(async () => {
     const content = await getContent();
-    const video = content.sections.flatMap((s) => s.videos).find((v) => v.id === id);
-    if (!video || (kind !== "video" && kind !== "poster")) return fail("Not found.", 404);
-    if (kind === "video") video.file = null;
-    else video.poster = null;
+    if (kind === "icon") {
+      const skill = content.about.skills.find((k) => k.id === id);
+      if (!skill) return fail("Not found.", 404);
+      skill.icon = null;
+    } else {
+      const video = content.sections.flatMap((s) => s.videos).find((v) => v.id === id);
+      if (!video || (kind !== "video" && kind !== "poster")) return fail("Not found.", 404);
+      if (kind === "video") video.file = null;
+      else video.poster = null;
+    }
     await saveContent(content);
     revalidatePath("/");
     return Response.json({ content });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LIMITS, TYPE_LABEL, emptyVideo, newId, uploadedCount, type Content, type Section, type SectionType } from "@/lib/content";
+import { ICON_RULES, LIMITS, TYPE_LABEL, emptyVideo, newId, uploadedCount, type About, type Content, type Section, type SectionType } from "@/lib/content";
 
 const mb = (n: number) => `${n / 1024 / 1024} MB`;
 
@@ -66,15 +66,19 @@ export function AdminPanel({ initial }: { initial: Content }) {
   };
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  const setSection = (id: string, fn: (s: Section) => Section) => edit((c) => ({ sections: c.sections.map((s) => (s.id === id ? fn(s) : s)) }));
+  const setSection = (id: string, fn: (s: Section) => Section) => edit((c) => ({ ...c, sections: c.sections.map((s) => (s.id === id ? fn(s) : s)) }));
   // adopt only the file names the server reports; text the visitor is typing stays as it is
   const adoptFiles = (server: Content) => {
     const files = new Map(server.sections.flatMap((s) => s.videos).map((v) => [v.id, v]));
-    latest.current = { sections: latest.current.sections.map((s) => ({ ...s, videos: s.videos.map((v) => ({ ...v, file: files.get(v.id)?.file ?? null, poster: files.get(v.id)?.poster ?? null })) })) };
+    const icons = new Map(server.about.skills.map((k) => [k.id, k.icon]));
+    latest.current = {
+      sections: latest.current.sections.map((s) => ({ ...s, videos: s.videos.map((v) => ({ ...v, file: files.get(v.id)?.file ?? null, poster: files.get(v.id)?.poster ?? null })) })),
+      about: { ...latest.current.about, skills: latest.current.about.skills.map((k) => ({ ...k, icon: icons.get(k.id) ?? null })) },
+    };
     setContent(latest.current);
   };
 
-  const upload = async (id: string, kind: "video" | "poster", file: File) => {
+  const upload = async (id: string, kind: "video" | "poster" | "icon", file: File) => {
     setError("");
     if (timer.current) await save();
     await inflight.current;
@@ -97,7 +101,7 @@ export function AdminPanel({ initial }: { initial: Content }) {
       x.send(file);
     });
   };
-  const removeFile = async (id: string, kind: "video" | "poster") => {
+  const removeFile = async (id: string, kind: "video" | "poster" | "icon") => {
     if (timer.current) await save();
     const r = await fetch(`/api/admin/upload?id=${id}&kind=${kind}`, { method: "DELETE" });
     const body = await r.json().catch(() => ({}));
@@ -107,18 +111,20 @@ export function AdminPanel({ initial }: { initial: Content }) {
 
   const used = uploadedCount(content);
   const full = used >= LIMITS.uploads;
+  const [tab, setTab] = useState<"videos" | "about">("videos");
+  const setAbout = (fn: (a: About) => About) => edit((c) => ({ ...c, about: fn(c.about) }));
   const [newType, setNewType] = useState<SectionType>("grid");
   const [newText, setNewText] = useState("");
   const addSection = () => {
     const rule = LIMITS.rules[newType];
-    edit((c) => ({ sections: [...c.sections, { id: newId(), type: newType, marquee: newText.trim().toUpperCase() || "NEW SECTION", heading: "", videos: Array.from({ length: rule.min }, emptyVideo) }] }));
+    edit((c) => ({ ...c, sections: [...c.sections, { id: newId(), type: newType, marquee: newText.trim().toUpperCase() || "NEW SECTION", heading: "", videos: Array.from({ length: rule.min }, emptyVideo) }] }));
     setNewText("");
   };
   const move = (i: number, d: number) =>
     edit((c) => {
       const a = [...c.sections];
       [a[i], a[i + d]] = [a[i + d], a[i]];
-      return { sections: a };
+      return { ...c, sections: a };
     });
   const signOut = async () => {
     await fetch("/api/admin/login", { method: "DELETE" });
@@ -129,11 +135,17 @@ export function AdminPanel({ initial }: { initial: Content }) {
     <main className="adm">
       <header className="adm-top">
         <div>
-          <h1>Video sections</h1>
-          <p>
-            <b>{used} / {LIMITS.uploads}</b> videos uploaded.{" "}
-            {full ? "Limit reached: remove a video file to upload another." : `${LIMITS.uploads - used} left.`}
-          </p>
+          <h1>{tab === "videos" ? "Video sections" : "About section"}</h1>
+          <div className="adm-tabs" role="tablist">
+            <button className={"adm-btn" + (tab === "videos" ? " adm-primary" : "")} type="button" role="tab" aria-selected={tab === "videos"} onClick={() => setTab("videos")}>Video sections</button>
+            <button className={"adm-btn" + (tab === "about" ? " adm-primary" : "")} type="button" role="tab" aria-selected={tab === "about"} onClick={() => setTab("about")}>About section</button>
+          </div>
+          {tab === "videos" && (
+            <p>
+              <b>{used} / {LIMITS.uploads}</b> videos uploaded.{" "}
+              {full ? "Limit reached: remove a video file to upload another." : `${LIMITS.uploads - used} left.`}
+            </p>
+          )}
         </div>
         <div className="adm-top-r">
           <span className={"adm-status adm-" + status} role="status">{status === "saved" ? "All changes saved" : status === "saving" ? "Saving…" : "Not saved"}</span>
@@ -143,7 +155,9 @@ export function AdminPanel({ initial }: { initial: Content }) {
       </header>
       {error && <p className="adm-err" role="alert">{error}</p>}
 
-      {content.sections.map((s, i) => {
+      {tab === "about" && <AboutEditor about={content.about} setAbout={setAbout} progress={progress} upload={upload} removeFile={removeFile} />}
+
+      {tab === "videos" && content.sections.map((s, i) => {
         const rule = LIMITS.rules[s.type];
         const n = s.videos.length;
         return (
@@ -156,7 +170,7 @@ export function AdminPanel({ initial }: { initial: Content }) {
               <button
                 className="adm-btn adm-danger"
                 type="button"
-                onClick={() => confirm(`Delete this section and its ${n} video slot(s), including uploaded files?`) && edit((c) => ({ sections: c.sections.filter((x) => x.id !== s.id) }))}
+                onClick={() => confirm(`Delete this section and its ${n} video slot(s), including uploaded files?`) && edit((c) => ({ ...c, sections: c.sections.filter((x) => x.id !== s.id) }))}
               >
                 Delete section
               </button>
@@ -211,7 +225,7 @@ export function AdminPanel({ initial }: { initial: Content }) {
         );
       })}
 
-      <section className="adm-sec adm-new">
+      {tab === "videos" && <section className="adm-sec adm-new">
         <h2>Add a section</h2>
         <div className="adm-row">
           <label>
@@ -231,7 +245,7 @@ export function AdminPanel({ initial }: { initial: Content }) {
           Add section
         </button>
         <p className="adm-note">New sections start with the minimum number of empty slots. Upload videos into them below.</p>
-      </section>
+      </section>}
     </main>
   );
 }
@@ -263,5 +277,77 @@ function File({ label, accept, current, progress, hint, disabled, onPick, onRemo
       </div>
       <span className="adm-muted adm-hint">{hint}</span>
     </div>
+  );
+}
+
+function AboutEditor({ about, setAbout, progress, upload, removeFile }: { about: About; setAbout: (fn: (a: About) => About) => void; progress: Record<string, number>; upload: (id: string, kind: "icon", f: File) => void; removeFile: (id: string, kind: "icon") => void }) {
+  const set = <K extends keyof About>(k: K, v: About[K]) => setAbout((a) => ({ ...a, [k]: v }));
+  const upd = <T,>(list: T[], i: number, patch: Partial<T>) => list.map((x, j) => (j === i ? { ...x, ...patch } : x));
+  return (
+    <>
+      <section className="adm-sec">
+        <h2>Text</h2>
+        <div className="adm-row">
+          <label>Big greeting<input value={about.hello} maxLength={20} onChange={(e) => set("hello", e.target.value)} /></label>
+          <label>Line under it<input value={about.lead} maxLength={80} onChange={(e) => set("lead", e.target.value)} /></label>
+        </div>
+        <label>First paragraph<textarea value={about.intro} maxLength={600} rows={4} onChange={(e) => set("intro", e.target.value)} /></label>
+        <label>Second paragraph<textarea value={about.intro2} maxLength={600} rows={3} onChange={(e) => set("intro2", e.target.value)} /></label>
+      </section>
+
+      <section className="adm-sec">
+        <h2>Education</h2>
+        {about.education.map((e, i) => (
+          <div className="adm-video" key={i}>
+            <div className="adm-row">
+              <label>School / course<input value={e.what} maxLength={100} onChange={(ev) => set("education", upd(about.education, i, { what: ev.target.value }))} /></label>
+              <label>Degree and years<input value={e.detail} maxLength={100} onChange={(ev) => set("education", upd(about.education, i, { detail: ev.target.value }))} /></label>
+            </div>
+            <button className="adm-btn adm-danger" type="button" onClick={() => set("education", about.education.filter((_, j) => j !== i))}>Delete entry</button>
+          </div>
+        ))}
+        <button className="adm-btn" type="button" disabled={about.education.length >= LIMITS.listItems} onClick={() => set("education", [...about.education, { what: "", detail: "" }])}>Add education ({about.education.length}/{LIMITS.listItems})</button>
+      </section>
+
+      <section className="adm-sec">
+        <h2>Experience</h2>
+        {about.experience.map((e, i) => (
+          <div className="adm-video" key={i}>
+            <div className="adm-row">
+              <label>Years<input value={e.when} maxLength={40} onChange={(ev) => set("experience", upd(about.experience, i, { when: ev.target.value }))} /></label>
+              <label>Role<input value={e.what} maxLength={100} onChange={(ev) => set("experience", upd(about.experience, i, { what: ev.target.value }))} /></label>
+            </div>
+            <label>Details<textarea value={e.detail} maxLength={300} rows={2} onChange={(ev) => set("experience", upd(about.experience, i, { detail: ev.target.value }))} /></label>
+            <button className="adm-btn adm-danger" type="button" onClick={() => set("experience", about.experience.filter((_, j) => j !== i))}>Delete entry</button>
+          </div>
+        ))}
+        <button className="adm-btn" type="button" disabled={about.experience.length >= LIMITS.listItems} onClick={() => set("experience", [...about.experience, { when: "", what: "", detail: "" }])}>Add experience ({about.experience.length}/{LIMITS.listItems})</button>
+      </section>
+
+      <section className="adm-sec">
+        <h2>Skills</h2>
+        <p className="adm-note">Icon rules: {ICON_RULES} Without an icon the badge shows the short letters instead.</p>
+        <ul className="adm-videos">
+          {about.skills.map((k, i) => (
+            <li className="adm-video" key={k.id}>
+              <div className="adm-row">
+                <label>Name<input value={k.name} maxLength={40} onChange={(e) => set("skills", upd(about.skills, i, { name: e.target.value }))} /></label>
+                <label>Letters (no icon)<input value={k.abbr} maxLength={3} onChange={(e) => set("skills", upd(about.skills, i, { abbr: e.target.value }))} /></label>
+                <label>Letter colour<input type="color" value={k.color} onChange={(e) => set("skills", upd(about.skills, i, { color: e.target.value }))} /></label>
+              </div>
+              <div className="adm-files">
+                {k.icon && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="adm-icon" src={k.icon.startsWith("/") ? k.icon : `/media/${k.icon}`} alt="" width={64} height={64} />
+                )}
+                <File label="Icon" accept="image/png" current={k.icon} progress={progress[k.id + "icon"]} hint="PNG, square" onPick={(f) => upload(k.id, "icon", f)} onRemove={() => removeFile(k.id, "icon")} />
+                <button className="adm-btn adm-danger" type="button" onClick={() => set("skills", about.skills.filter((s) => s.id !== k.id))}>Delete skill</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <button className="adm-btn" type="button" disabled={about.skills.length >= LIMITS.skills} onClick={() => set("skills", [...about.skills, { id: newId(), name: "", abbr: "", color: "#ffffff", icon: null }])}>Add skill ({about.skills.length}/{LIMITS.skills})</button>
+      </section>
+    </>
   );
 }

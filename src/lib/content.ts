@@ -1,16 +1,31 @@
-import { showreel, reels, commercial, youtube, type Clip } from "@/data/site";
+import { showreel, reels, commercial, youtube, site, tools, education, experience, type Clip } from "@/data/site";
 
 // Shared by the server (validation, storage) and the admin panel (limits shown in the UI). No Node APIs here.
 
 export type SectionType = "full" | "reels" | "grid";
 export type Video = { id: string; title: string; client: string; file: string | null; poster: string | null };
 export type Section = { id: string; type: SectionType; marquee: string; heading: string; videos: Video[] };
-export type Content = { sections: Section[] };
+export type Skill = { id: string; name: string; abbr: string; color: string; icon: string | null }; // icon: an uploaded file name, or a bundled "/path" image
+export type About = {
+  hello: string;
+  lead: string;
+  intro: string;
+  intro2: string;
+  education: { what: string; detail: string }[];
+  experience: { when: string; what: string; detail: string }[];
+  skills: Skill[];
+};
+export type Content = { sections: Section[]; about: About };
 
 export const LIMITS = {
   uploads: 20, // uploaded video files in total, across every section
   sections: 12,
   videoBytes: 500 * 1024 * 1024,
+  iconBytes: 1024 * 1024,
+  iconMin: 128, // px, square
+  iconMax: 1024,
+  skills: 12,
+  listItems: 4, // education / experience entries
   posterBytes: 8 * 1024 * 1024,
   // videos per section
   rules: { full: { min: 1, max: 3 }, reels: { min: 2, max: 3 }, grid: { min: 4, max: 4 } },
@@ -25,14 +40,27 @@ export const TYPE_LABEL: Record<SectionType, string> = {
 export const ID_RE = /^[a-z0-9]{2,16}$/;
 export const FILE_RE = /^[a-z0-9]{2,16}-[a-z0-9]{6}\.(mp4|webm|mov|jpg|png|webp)$/;
 
+export const ICON_RULES = `Square PNG (same width and height), ${LIMITS.iconMin} to ${LIMITS.iconMax}px, up to ${LIMITS.iconBytes / 1024 / 1024} MB. A transparent background looks best. It is never stretched: it is fitted inside a square badge.`;
+
 export const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 10);
 export const emptyVideo = (): Video => ({ id: newId(), title: "", client: "", file: null, poster: null });
 export const uploadedCount = (c: Content) => c.sections.reduce((n, s) => n + s.videos.filter((v) => v.file).length, 0);
 
 const seedVideo = (c: Clip): Video => ({ id: c.id, title: c.title, client: c.client, file: null, poster: null });
 
+export const seedAbout = (): About => ({
+  hello: "Hello",
+  lead: `Hi, I'm ${site.name}.`,
+  intro: site.intro,
+  intro2: site.intro2,
+  education: education.map((e) => ({ ...e })),
+  experience: experience.map((e) => ({ ...e })),
+  skills: tools.map((t) => ({ id: "sk" + t.abbr.toLowerCase(), name: t.name, abbr: t.abbr, color: t.color, icon: (t as { img?: string }).img ?? null })),
+});
+
 /** What the site shows before anything is saved: the sample placeholders. */
 export const seedContent = (): Content => ({
+  about: seedAbout(),
   sections: [
     { id: "secshow", type: "full", marquee: "SHOWREEL", heading: "Showreel", videos: [seedVideo(showreel)] },
     { id: "secreels", type: "reels", marquee: "SOCIAL MEDIA & REELS", heading: "", videos: reels.map(seedVideo) },
@@ -73,5 +101,38 @@ export function normalize(input: unknown, current: Content): { ok: true; content
     }
     out.push({ id: s.id, type: s.type, marquee: str(s.marquee, 60), heading: s.type === "full" ? str(s.heading, 40) : "", videos });
   }
-  return { ok: true, content: { sections: out } };
+  const about = normalizeAbout((input as Content).about, current.about ?? seedAbout());
+  if (!about.ok) return about;
+  return { ok: true, content: { sections: out, about: about.about } };
+}
+
+/** An icon name is only kept if the server already had it (uploads go through the upload route) and still looks like one of ours. */
+const keepIcon = (i: string | null | undefined) => (i && (FILE_RE.test(i) || i === "/davinci.webp") ? i : null);
+
+function normalizeAbout(input: unknown, current: About): { ok: true; about: About } | { ok: false; error: string } {
+  const a = input as About | undefined;
+  if (!a) return { ok: true, about: current };
+  if (!Array.isArray(a.skills) || a.skills.length > LIMITS.skills) return { ok: false, error: `At most ${LIMITS.skills} skills.` };
+  if (!Array.isArray(a.education) || a.education.length > LIMITS.listItems || !Array.isArray(a.experience) || a.experience.length > LIMITS.listItems)
+    return { ok: false, error: `At most ${LIMITS.listItems} education and experience entries.` };
+  const old = new Map((current.skills ?? []).map((s) => [s.id, s]));
+  const ids = new Set<string>();
+  const skills: Skill[] = [];
+  for (const s of a.skills) {
+    if (!ID_RE.test(s?.id) || ids.has(s.id)) return { ok: false, error: "Invalid skill id." };
+    ids.add(s.id);
+    skills.push({ id: s.id, name: str(s.name, 40), abbr: str(s.abbr, 3), color: /^#[0-9a-f]{6}$/i.test(s.color) ? s.color : "#ffffff", icon: keepIcon(old.get(s.id)?.icon) });
+  }
+  return {
+    ok: true,
+    about: {
+      hello: str(a.hello, 20),
+      lead: str(a.lead, 80),
+      intro: str(a.intro, 600),
+      intro2: str(a.intro2, 600),
+      education: a.education.map((e) => ({ what: str(e?.what, 100), detail: str(e?.detail, 100) })),
+      experience: a.experience.map((e) => ({ when: str(e?.when, 40), what: str(e?.what, 100), detail: str(e?.detail, 300) })),
+      skills,
+    },
+  };
 }

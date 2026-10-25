@@ -3,18 +3,18 @@ import { VideoSections } from "@/components/VideoSections";
 import { getContent } from "@/lib/store";
 import { GlitchWord, RollYear, BlurDefs } from "@/components/GlitchWord";
 import { HeroFace } from "@/components/HeroFace";
-import { Turntable } from "@/components/Turntable";
 import { Marquee } from "@/components/Marquee";
 import { VideoCard } from "@/components/VideoCard";
 import { Sunburst, PlayTile, Sparkle, Quatrefoil, Arrow } from "@/components/Glyphs";
-import { HeroMotion, ScrubMarquee, DropIn } from "@/components/Motion";
+import { HeroMotion, DropIn } from "@/components/Motion";
 import { MountainRim, tearMask } from "@/lib/tear";
-import { site, tools, services, experience, education, showreel, reels, commercial, youtube } from "@/data/site";
+import { site, services } from "@/data/site";
 
 const tear = (seed: number, flip = false) => ({ "--tear": tearMask(seed, flip) }) as React.CSSProperties;
 
 export default async function Home() {
   const content = await getContent();
+  const about = content.about;
   return (
     <>
       <a className="skip" href="#main">
@@ -79,7 +79,9 @@ export default async function Home() {
           <div className="about-grid">
             <div className="about-figure">
               <div className="selbox">
-                <Turntable className="selbox-turn" alt={`${site.name}, full length`} />
+                <div className="selbox-vid">
+                  <video src="/portrait/about.mp4" autoPlay loop muted playsInline preload="auto" aria-label={`${site.name}, full length`} />
+                </div>
                 <i className="h h-tl" />
                 <i className="h h-tr" />
                 <i className="h h-bl" />
@@ -89,13 +91,13 @@ export default async function Home() {
               </div>
             </div>
             <div className="about-copy">
-              <h2 className="h-hello">Hello</h2>
-              <p className="about-lead">Hi, I&rsquo;m {site.name}.</p>
-              <p>{site.intro}</p>
-              <p>{site.intro2}</p>
+              <h2 className="h-hello">{about.hello}</h2>
+              <p className="about-lead">{about.lead}</p>
+              <p>{about.intro}</p>
+              <p>{about.intro2}</p>
               <h3 className="h-sub">Education</h3>
-              {education.map((e) => (
-                <p key={e.what} className="about-line">
+              {about.education.map((e, i) => (
+                <p key={i} className="about-line">
                   {e.what}
                   <br />
                   {e.detail}
@@ -105,11 +107,11 @@ export default async function Home() {
             <div className="about-side">
               <h3 className="h-sub">Skills</h3>
               <ul className="tools">
-                {tools.map((t) => (
-                  <li key={t.abbr} aria-label={t.name} title={t.name} style={{ "--tool": t.color } as React.CSSProperties}>
-                    {"img" in t ? (
+                {about.skills.map((t) => (
+                  <li key={t.id} aria-label={t.name} title={t.name} style={{ "--tool": t.color } as React.CSSProperties}>
+                    {t.icon ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={t.img} alt="" width={459} height={465} />
+                      <img src={t.icon.startsWith("/") ? t.icon : `/media/${t.icon}`} alt="" width={256} height={256} />
                     ) : (
                       t.abbr
                     )}
@@ -117,8 +119,8 @@ export default async function Home() {
                 ))}
               </ul>
               <h3 className="h-sub">Experience</h3>
-              {experience.map((e) => (
-                <p key={e.when} className="about-line">
+              {about.experience.map((e, i) => (
+                <p key={i} className="about-line">
                   {e.when}
                   <br />
                   {e.what}
@@ -133,9 +135,9 @@ export default async function Home() {
         {/* CUT-OUT BAND */}
         <section className="black cutout" aria-label={site.role}>
           <MountainRim seed={5} />
-          <ScrubMarquee className="cutout-band" distance={28}>
+          <div className="cutout-band">
             <Marquee texts={["VIDEO EDITOR", "MOTION DESIGNER"]} className="band-fraktur" repeat={3} />
-          </ScrubMarquee>
+          </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="cutout-photo" src="/portrait/graphic-novel.webp" alt={`${site.name}, portrait`} width={1214} height={1135} loading="lazy" />
         </section>

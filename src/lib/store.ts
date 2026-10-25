@@ -45,6 +45,6 @@ export async function saveContent(content: Content) {
   await fs.writeFile(tmp, JSON.stringify(content, null, 2));
   await fs.rename(tmp, FILE);
   // delete uploads nothing refers to any more
-  const used = new Set(content.sections.flatMap((s) => s.videos.flatMap((v) => [v.file, v.poster])));
+  const used = new Set<string | null>([...content.sections.flatMap((s) => s.videos.flatMap((v) => [v.file, v.poster])), ...content.about.skills.map((k) => k.icon)]);
   for (const f of await fs.readdir(UPLOADS)) if (FILE_RE.test(f) && !used.has(f)) await fs.unlink(path.join(UPLOADS, f)).catch(() => {});
 }

@@ -495,9 +495,9 @@ html[data-site-font="acumin"] .hero-year { letter-spacing: .06em; }
   .nav-burger ul li + li { border-top: 1px solid var(--line); }
 
   /* hero: caption, PORTF / OLIO stacked left, ink portrait right, icons, caption below */
-  .hero { min-height: 0; padding: calc(var(--nav-h) + 1.4rem) var(--gutter) 3.6rem; }
-  .hero-desk { display: none; }
-  .mhero { display: block; position: relative; width: 100%; height: 76vw; }
+  /* TEST: hero on phones = the laptop hero (scaled). To bring the stacked PORTF / OLIO hero back: restore .hero-desk { display: none } and .mhero { display: block } */
+  .hero { min-height: 0; --cap: 3.4vw; padding: calc(var(--nav-h) + 1.5rem) var(--gutter) 2rem; } /* no full-screen height (that left the empty gap); captions scale with the screen width */
+  .mhero { display: none; position: relative; width: 100%; height: 76vw; }
   .mhero-cap, .mhero-cap2 { font-family: var(--acumin); font-weight: 500; font-size: 12px; letter-spacing: .38em; text-transform: uppercase; margin: 0; }
   .mhero-cap { position: absolute; left: 0; top: 0; }
   .mhero-title { position: absolute; z-index: 2; left: 0; top: 1.5rem; margin: 0; font-family: var(--f-display); font-size: 26vw; line-height: .84; text-transform: uppercase; }
@@ -557,3 +557,13 @@ html[data-site-font="acumin"] .hero-year { letter-spacing: .06em; }
 @media (max-width: 720px) {
   .wides { grid-template-columns: 1fr; gap: 1.5rem; padding: clamp(1.25rem, 4vw, 3rem); }
 }
+
+/* admin: tabs, text areas, icon preview */
+.adm-tabs { display: flex; gap: .5rem; margin: .4rem 0 .8rem; }
+.adm textarea { font: inherit; font-weight: 500; padding: .55rem .7rem; border: 2px solid var(--ink); border-radius: 8px; background: #fff; min-width: 0; resize: vertical; }
+.adm input[type="color"] { padding: .15rem; height: 2.4rem; }
+.adm-icon { width: 64px; height: 64px; object-fit: contain; background: repeating-conic-gradient(#ddd 0 25%, #fff 0 50%) 0 0 / 14px 14px; border: 1px solid #bbb; border-radius: 8px; }
+
+/* About figure: the turntable video, cropped to hide its black bars */
+.selbox-vid { position: absolute; inset: 0; overflow: hidden; }
+.selbox-vid video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.34); }
