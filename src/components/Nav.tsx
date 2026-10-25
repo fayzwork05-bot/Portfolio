@@ -19,6 +19,24 @@ export function Nav() {
       <a className="btn btn-ink" href="#contact">
         Hire me
       </a>
+      {/* phones: menu button (details = no JS) */}
+      <details className="nav-burger">
+        <summary aria-label="Menu">
+          <span />
+          <span />
+          <span />
+        </summary>
+        <ul>
+          {nav.map((n) => (
+            <li key={n.href}>
+              <a href={n.href}>{n.label}</a>
+            </li>
+          ))}
+          <li>
+            <a href="#contact">Hire me</a>
+          </li>
+        </ul>
+      </details>
     </header>
   );
 }

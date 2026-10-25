@@ -28,7 +28,7 @@ export default async function Home() {
             Portfolio of {site.name}, {site.role}
           </h1>
           <BlurDefs count={12} />
-          <HeroMotion className="hero-inner">
+          <HeroMotion className="hero-inner hero-desk">
             <p className="hero-cap hero-cap-top hero-fade">{site.role}</p>
             <p className="hero-year">
               <RollYear text={site.year} />
@@ -52,6 +52,24 @@ export default async function Home() {
               </span>
             </div>
           </HeroMotion>
+          {/* phones only */}
+          <div className="mhero" aria-hidden>
+            <p className="mhero-cap">{site.role.split(" &")[0]}</p>
+            <p className="mhero-title">
+              PORTF
+              <br />
+              OLIO
+            </p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="mhero-face" src="/portrait/ink.webp" alt="" width={1130} height={955} />
+            <Sparkle className="mhero-spark" />
+            <Quatrefoil className="mhero-club" />
+            <p className="mhero-cap2">
+              <i />
+              {site.role.split(" &")[0]}
+              <i />
+            </p>
+          </div>
         </section>
 
         <Marquee texts={["ABOUT ME"]} className="band band-wide" />
