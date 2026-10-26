@@ -12,6 +12,9 @@ import { site, services } from "@/data/site";
 
 const tear = (seed: number, flip = false) => ({ "--tear": tearMask(seed, flip) }) as React.CSSProperties;
 
+// the page shows what was saved in /admin, so it is rendered on every visit, never frozen at build time
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const content = await getContent();
   const about = content.about;

@@ -20,7 +20,9 @@ export async function getContent(): Promise<Content> {
       : JSON.parse(await fs.readFile(FILE, "utf8"));
     const r = normalizeStored(raw);
     if (r) return r;
-  } catch {}
+  } catch (e) {
+    if (blobOn() && (e as Error).name !== "BlobNotFoundError") console.error("getContent: could not read content.json from Blob:", e); // shows in the Vercel logs
+  }
   return seedContent();
 }
 
