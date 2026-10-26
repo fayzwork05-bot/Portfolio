@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { COOKIE, adminConfigured, tokenOk } from "@/lib/auth";
 import { getContent } from "@/lib/store";
 import { AdminLogin, AdminPanel } from "@/components/AdminPanel";
+import { blobOn } from "@/lib/blobstore";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -18,5 +19,5 @@ export default async function AdminPage() {
       </main>
     );
   const signedIn = tokenOk((await cookies()).get(COOKIE)?.value);
-  return signedIn ? <AdminPanel initial={await getContent()} /> : <AdminLogin />;
+  return signedIn ? <AdminPanel initial={await getContent()} blob={blobOn()} /> : <AdminLogin />;
 }

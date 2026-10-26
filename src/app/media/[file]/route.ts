@@ -4,6 +4,8 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { FILE_RE } from "@/lib/content";
 import { UPLOADS } from "@/lib/store";
+import { head } from "@vercel/blob";
+import { blobAuth, blobOn } from "@/lib/blobstore";
 
 const MIME: Record<string, string> = { mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime", jpg: "image/jpeg", png: "image/png", webp: "image/webp" };
 
@@ -11,6 +13,11 @@ const MIME: Record<string, string> = { mp4: "video/mp4", webm: "video/webm", mov
 export async function GET(req: Request, ctx: { params: Promise<{ file: string }> }) {
   const { file } = await ctx.params;
   if (!FILE_RE.test(file)) return new Response("Not found", { status: 404 });
+  if (blobOn()) {
+    // files live in Vercel Blob: send the browser there (it handles Range requests for video itself)
+    const b = await head(`uploads/${file}`, blobAuth()).catch(() => null);
+    return b ? Response.redirect(b.url, 307) : new Response("Not found", { status: 404 });
+  }
   const full = path.join(UPLOADS, file);
   const stat = await fs.stat(full).catch(() => null);
   if (!stat) return new Response("Not found", { status: 404 });

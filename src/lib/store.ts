@@ -1,7 +1,9 @@
 import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { del, head, list, put } from "@vercel/blob";
 import { FILE_RE, normalize, seedContent, type Content } from "./content";
+import { blobAuth, blobOn } from "./blobstore";
 
 // Local-disk storage: data/content.json plus data/uploads/*. This does NOT survive on Vercel (read-only, ephemeral disk).
 // For production, replace the functions in this file with Vercel Blob (files) + a database or KV (content.json). Nothing else touches the disk.
@@ -9,9 +11,13 @@ const DIR = process.env.DATA_DIR ?? path.join(process.cwd(), "data");
 export const UPLOADS = path.join(DIR, "uploads");
 const FILE = path.join(DIR, "content.json");
 
+const BLOB_FILE = "content.json";
+
 export async function getContent(): Promise<Content> {
   try {
-    const raw = JSON.parse(await fs.readFile(FILE, "utf8"));
+    const raw = blobOn()
+      ? await (await fetch(`${(await head(BLOB_FILE, blobAuth())).url}?t=${Date.now()}`, { cache: "no-store" })).json() // a fresh URL each time skips the CDN cache
+      : JSON.parse(await fs.readFile(FILE, "utf8"));
     const r = normalizeStored(raw);
     if (r) return r;
   } catch {}
@@ -40,6 +46,7 @@ export function withLock<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 export async function saveContent(content: Content) {
+  if (blobOn()) return saveToBlob(content);
   await fs.mkdir(UPLOADS, { recursive: true });
   const tmp = FILE + ".tmp";
   await fs.writeFile(tmp, JSON.stringify(content, null, 2));
@@ -47,4 +54,13 @@ export async function saveContent(content: Content) {
   // delete uploads nothing refers to any more
   const used = new Set<string | null>([...content.sections.flatMap((s) => s.videos.flatMap((v) => [v.file, v.poster])), ...content.about.skills.map((k) => k.icon)]);
   for (const f of await fs.readdir(UPLOADS)) if (FILE_RE.test(f) && !used.has(f)) await fs.unlink(path.join(UPLOADS, f)).catch(() => {});
+}
+
+async function saveToBlob(content: Content) {
+  await put(BLOB_FILE, JSON.stringify(content, null, 2), { access: "public", allowOverwrite: true, addRandomSuffix: false, contentType: "application/json", cacheControlMaxAge: 60, ...blobAuth() });
+  // delete uploads nothing refers to any more
+  const used = new Set<string | null>([...content.sections.flatMap((s) => s.videos.flatMap((v) => [v.file, v.poster])), ...content.about.skills.map((k) => k.icon)]);
+  const { blobs } = await list({ prefix: "uploads/", ...blobAuth() });
+  const stale = blobs.filter((b) => !used.has(b.pathname.slice("uploads/".length))).map((b) => b.url);
+  if (stale.length) await del(stale, blobAuth());
 }

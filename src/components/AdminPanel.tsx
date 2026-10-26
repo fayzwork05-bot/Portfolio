@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { uploadPresigned } from "@vercel/blob/client";
 import { ICON_RULES, LIMITS, TYPE_LABEL, emptyVideo, newId, uploadedCount, type About, type Content, type Section, type SectionType } from "@/lib/content";
 
 const mb = (n: number) => `${n / 1024 / 1024} MB`;
@@ -31,7 +32,7 @@ export function AdminLogin() {
 
 type Status = "saved" | "saving" | "error";
 
-export function AdminPanel({ initial }: { initial: Content }) {
+export function AdminPanel({ initial, blob }: { initial: Content; blob: boolean }) {
   const [content, setContent] = useState(initial);
   const [status, setStatus] = useState<Status>("saved");
   const [error, setError] = useState("");
@@ -83,6 +84,7 @@ export function AdminPanel({ initial }: { initial: Content }) {
     if (timer.current) await save();
     await inflight.current;
     const key = id + kind;
+    if (blob) return uploadToBlob(id, kind, file, key);
     await new Promise<void>((done) => {
       const x = new XMLHttpRequest();
       x.open("PUT", `/api/admin/upload?id=${id}&kind=${kind}`);
@@ -100,6 +102,33 @@ export function AdminPanel({ initial }: { initial: Content }) {
       };
       x.send(file);
     });
+  };
+  // Vercel Blob: the browser sends the file straight to storage (a server function cannot take a big video), then the server attaches it to its slot
+  const uploadToBlob = async (id: string, kind: "video" | "poster" | "icon", file: File, key: string) => {
+    const ext = ({ "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as Record<string, string>)[file.type];
+    const allowed = kind === "video" ? ["mp4", "webm", "mov"] : kind === "icon" ? ["png"] : ["jpg", "png", "webp"];
+    if (!ext || !allowed.includes(ext)) return setError(kind === "icon" ? "Icon must be a PNG." : kind === "poster" ? "Poster must be JPG, PNG or WebP." : "Video must be MP4, WebM or MOV.");
+    if (file.size > (kind === "video" ? LIMITS.videoBytes : kind === "icon" ? LIMITS.iconBytes : LIMITS.posterBytes)) return setError("File is too large.");
+    const name = `${id}-${Array.from(crypto.getRandomValues(new Uint8Array(3)), (b) => b.toString(16).padStart(2, "0")).join("")}.${ext}`;
+    setProgress((p) => ({ ...p, [key]: 0.01 }));
+    try {
+      await uploadPresigned(`uploads/${name}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/admin/upload",
+        clientPayload: JSON.stringify({ id, kind }),
+        contentType: file.type,
+        multipart: file.size > 8 * 1024 * 1024,
+        onUploadProgress: (e) => setProgress((p) => ({ ...p, [key]: Math.max(0.01, e.percentage / 100) })),
+      });
+      const r = await fetch("/api/admin/attach", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, kind, name }) });
+      const body = await r.json().catch(() => ({}));
+      if (r.ok) adoptFiles(body.content);
+      else setError(body.error ?? "Upload failed.");
+    } catch (e) {
+      setError((e as Error).message || "Upload failed.");
+    } finally {
+      setProgress(({ [key]: _, ...rest }) => rest);
+    }
   };
   const removeFile = async (id: string, kind: "video" | "poster" | "icon") => {
     if (timer.current) await save();

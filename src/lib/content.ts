@@ -42,6 +42,14 @@ export const FILE_RE = /^[a-z0-9]{2,16}-[a-z0-9]{6}\.(mp4|webm|mov|jpg|png|webp)
 
 export const ICON_RULES = `Square PNG (same width and height), ${LIMITS.iconMin} to ${LIMITS.iconMax}px, up to ${LIMITS.iconBytes / 1024 / 1024} MB. A transparent background looks best. It is never stretched: it is fitted inside a square badge.`;
 
+/** Which file types each upload kind accepts (shared by the panel and both upload paths). */
+export const KINDS = {
+  video: { types: { "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" }, max: () => LIMITS.videoBytes },
+  poster: { types: { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }, max: () => LIMITS.posterBytes },
+  icon: { types: { "image/png": "png" }, max: () => LIMITS.iconBytes },
+} as const;
+export type UploadKind = keyof typeof KINDS;
+
 export const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 10);
 export const emptyVideo = (): Video => ({ id: newId(), title: "", client: "", file: null, poster: null });
 export const uploadedCount = (c: Content) => c.sections.reduce((n, s) => n + s.videos.filter((v) => v.file).length, 0);

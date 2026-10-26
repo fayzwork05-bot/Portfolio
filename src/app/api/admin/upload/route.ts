@@ -6,7 +6,10 @@ import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { revalidatePath } from "next/cache";
 import { isAdmin } from "@/lib/auth";
-import { LIMITS, uploadedCount } from "@/lib/content";
+import { handleUploadPresigned } from "@vercel/blob/client";
+import { issueSignedToken } from "@vercel/blob";
+import { FILE_RE, KINDS, LIMITS, uploadedCount, type UploadKind } from "@/lib/content";
+import { blobAuth, blobOn } from "@/lib/blobstore";
 import { UPLOADS, getContent, saveContent, withLock } from "@/lib/store";
 
 const TYPES: Record<string, { ext: string; kind: "video" | "poster" }> = {
@@ -29,6 +32,37 @@ function looksRight(head: Buffer, ext: string) {
 }
 
 const fail = (error: string, status: number) => Response.json({ error }, { status });
+
+/**
+ * POST: Vercel Blob mode. The browser asks here for permission to upload straight to Blob (a video cannot pass through a serverless function),
+ * and gets a short-lived, single-file, size- and type-limited token. The file is attached to its slot afterwards by /api/admin/attach.
+ */
+export async function POST(req: Request) {
+  if (!blobOn()) return fail("Blob storage is not configured.", 501);
+  if (!isAdmin(req)) return fail("Not signed in.", 401);
+  try {
+    const body = await req.json();
+    const result = await handleUploadPresigned({
+      body,
+      request: req,
+      getSignedToken: async (pathname, clientPayload) => {
+        const { id, kind } = JSON.parse(clientPayload ?? "{}") as { id?: string; kind?: UploadKind };
+        const k = kind && KINDS[kind];
+        const name = pathname.slice("uploads/".length);
+        if (!k || !id || !pathname.startsWith("uploads/") || !FILE_RE.test(name) || !name.startsWith(id + "-")) throw new Error("Bad upload request.");
+        const content = await getContent();
+        const slot = kind === "icon" ? content.about.skills.find((s) => s.id === id) : content.sections.flatMap((s) => s.videos).find((v) => v.id === id);
+        if (!slot) throw new Error("Slot not found. Wait for the page to finish saving, then try again.");
+        if (kind === "video" && !(slot as { file: string | null }).file && uploadedCount(content) >= LIMITS.uploads) throw new Error(`Limit reached: ${LIMITS.uploads} videos.`);
+        const token = await issueSignedToken({ pathname, operations: ["put"], allowedContentTypes: Object.keys(k.types), maximumSizeInBytes: k.max(), validUntil: Date.now() + 15 * 60 * 1000, ...blobAuth() });
+        return { token, urlOptions: { allowOverwrite: false, addRandomSuffix: false } };
+      },
+    });
+    return Response.json(result);
+  } catch (e) {
+    return fail((e as Error).message, 400);
+  }
+}
 
 /** PUT /api/admin/upload?id=<video or skill id>&kind=video|poster|icon with the raw file as the body. */
 export async function PUT(req: Request) {
