@@ -266,7 +266,8 @@ html[data-hero-font="bebas"] .hero { --hf: var(--font-bebas-local), "Arial Narro
   font-family: var(--f-heavy); font-size: clamp(2.4rem, 6.2vw, 5.6rem); line-height: .95; text-transform: uppercase;
   color: var(--red); text-shadow: .045em .045em 0 var(--amber); margin: 0;
 }
-.notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 3vw, 3rem); max-width: 1120px; margin-inline: auto; padding: 18px 0 0; }
+.notes { --gx: clamp(1rem, 3vw, 3rem); --gy: clamp(2rem, 4vw, 3.5rem); display: flex; flex-wrap: wrap; justify-content: center; gap: var(--gy) var(--gx); max-width: 1120px; margin-inline: auto; padding: 18px 0 0; } /* rows of three; a short last row stays centred */
+.note { width: calc((100% - 2 * var(--gx)) / 3); }
 .note { --tilt: 0deg; position: relative; transform: rotate(var(--tilt)); }
 .note:nth-child(6n + 1) { --tilt: -1.6deg; } .note:nth-child(6n + 2) { --tilt: 1.2deg; } .note:nth-child(6n + 3) { --tilt: -.8deg; }
 .note:nth-child(6n + 4) { --tilt: 1.5deg; } .note:nth-child(6n + 5) { --tilt: -1.1deg; } .note:nth-child(6n + 6) { --tilt: .9deg; }
@@ -278,7 +279,7 @@ html[data-hero-font="bebas"] .hero { --hf: var(--font-bebas-local), "Arial Narro
   .services { grid-template-columns: 1fr; }
   .services-title { writing-mode: horizontal-tb; transform: none; }
 }
-@media (max-width: 620px) { .notes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .notes { --gx: 1rem; } .note { width: calc((100% - var(--gx)) / 2); } }
 
 /* ---------- torn edges (declared late so their padding wins) ---------- */
 .tear-b {
@@ -528,7 +529,8 @@ html[data-site-font="acumin"] .hero-year { letter-spacing: .06em; }
   /* services: vertical title left, two columns of stickers */
   .services { grid-template-columns: auto minmax(0, 1fr); gap: .6rem; padding-inline: 14px; }
   .services .services-title { writing-mode: vertical-rl; transform: rotate(180deg); font-size: clamp(2.8rem, 15vw, 4.4rem); }
-  .notes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem .4rem; }
+  .notes { --gx: .4rem; --gy: .8rem; }
+  .note { width: calc((100% - var(--gx)) / 2); }
   .note p { font-size: .8rem; }
 
   /* video grids stay two across; contact buttons smaller */
@@ -567,3 +569,5 @@ html[data-site-font="acumin"] .hero-year { letter-spacing: .06em; }
 /* About figure: the turntable video, cropped to hide its black bars */
 .selbox-vid { position: absolute; inset: 0; overflow: hidden; }
 .selbox-vid video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.34); }
+
+.adm-svc { grid-template-columns: 1fr auto; align-items: end; }

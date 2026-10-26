@@ -1,4 +1,4 @@
-import { showreel, reels, commercial, youtube, site, tools, education, experience, type Clip } from "@/data/site";
+import { showreel, reels, commercial, youtube, site, tools, education, experience, services, type Clip } from "@/data/site";
 
 // Shared by the server (validation, storage) and the admin panel (limits shown in the UI). No Node APIs here.
 
@@ -15,7 +15,7 @@ export type About = {
   experience: { when: string; what: string; detail: string }[];
   skills: Skill[];
 };
-export type Content = { sections: Section[]; about: About };
+export type Content = { sections: Section[]; about: About; services: string[] };
 
 export const LIMITS = {
   uploads: 20, // uploaded video files in total, across every section
@@ -25,6 +25,7 @@ export const LIMITS = {
   iconMin: 128, // px, square
   iconMax: 1024,
   skills: 12,
+  services: 12, // service stickers
   listItems: 4, // education / experience entries
   posterBytes: 8 * 1024 * 1024,
   // videos per section
@@ -69,6 +70,7 @@ export const seedAbout = (): About => ({
 /** What the site shows before anything is saved: the sample placeholders. */
 export const seedContent = (): Content => ({
   about: seedAbout(),
+  services: [...services],
   sections: [
     { id: "secshow", type: "full", marquee: "SHOWREEL", heading: "Showreel", videos: [seedVideo(showreel)] },
     { id: "secreels", type: "reels", marquee: "SOCIAL MEDIA & REELS", heading: "", videos: reels.map(seedVideo) },
@@ -111,7 +113,13 @@ export function normalize(input: unknown, current: Content): { ok: true; content
   }
   const about = normalizeAbout((input as Content).about, current.about ?? seedAbout());
   if (!about.ok) return about;
-  return { ok: true, content: { sections: out, about: about.about } };
+  let svc = current.services ?? [...services];
+  const given = (input as Content).services;
+  if (given !== undefined) {
+    if (!Array.isArray(given) || given.length < 1 || given.length > LIMITS.services) return { ok: false, error: `Services: 1 to ${LIMITS.services} stickers.` };
+    svc = given.map((s) => str(s, 40));
+  }
+  return { ok: true, content: { sections: out, about: about.about, services: svc } };
 }
 
 /** An icon name is only kept if the server already had it (uploads go through the upload route) and still looks like one of ours. */

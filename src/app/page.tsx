@@ -8,7 +8,7 @@ import { VideoCard } from "@/components/VideoCard";
 import { Sunburst, PlayTile, Sparkle, Quatrefoil, Arrow } from "@/components/Glyphs";
 import { HeroMotion, DropIn } from "@/components/Motion";
 import { MountainRim, tearMask } from "@/lib/tear";
-import { site, services } from "@/data/site";
+import { site } from "@/data/site";
 
 const tear = (seed: number, flip = false) => ({ "--tear": tearMask(seed, flip) }) as React.CSSProperties;
 
@@ -150,8 +150,8 @@ export default async function Home() {
           <h2 className="services-title">Services</h2>
           <DropIn className="notes-wrap">
             <ul className="notes">
-              {services.map((s) => (
-                <li className="note" key={s}>
+              {content.services.map((s, i) => (
+                <li className="note" key={i}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/sticker.webp" alt="" width={1156} height={1360} loading="lazy" />
                   <p>{s}</p>

@@ -73,6 +73,7 @@ export function AdminPanel({ initial, blob }: { initial: Content; blob: boolean 
     const files = new Map(server.sections.flatMap((s) => s.videos).map((v) => [v.id, v]));
     const icons = new Map(server.about.skills.map((k) => [k.id, k.icon]));
     latest.current = {
+      ...latest.current,
       sections: latest.current.sections.map((s) => ({ ...s, videos: s.videos.map((v) => ({ ...v, file: files.get(v.id)?.file ?? null, poster: files.get(v.id)?.poster ?? null })) })),
       about: { ...latest.current.about, skills: latest.current.about.skills.map((k) => ({ ...k, icon: icons.get(k.id) ?? null })) },
     };
@@ -140,7 +141,7 @@ export function AdminPanel({ initial, blob }: { initial: Content; blob: boolean 
 
   const used = uploadedCount(content);
   const full = used >= LIMITS.uploads;
-  const [tab, setTab] = useState<"videos" | "about">("videos");
+  const [tab, setTab] = useState<"videos" | "about" | "services">("videos");
   const setAbout = (fn: (a: About) => About) => edit((c) => ({ ...c, about: fn(c.about) }));
   const [newType, setNewType] = useState<SectionType>("grid");
   const [newText, setNewText] = useState("");
@@ -164,10 +165,11 @@ export function AdminPanel({ initial, blob }: { initial: Content; blob: boolean 
     <main className="adm">
       <header className="adm-top">
         <div>
-          <h1>{tab === "videos" ? "Video sections" : "About section"}</h1>
+          <h1>{tab === "videos" ? "Video sections" : tab === "about" ? "About section" : "Services"}</h1>
           <div className="adm-tabs" role="tablist">
             <button className={"adm-btn" + (tab === "videos" ? " adm-primary" : "")} type="button" role="tab" aria-selected={tab === "videos"} onClick={() => setTab("videos")}>Video sections</button>
             <button className={"adm-btn" + (tab === "about" ? " adm-primary" : "")} type="button" role="tab" aria-selected={tab === "about"} onClick={() => setTab("about")}>About section</button>
+            <button className={"adm-btn" + (tab === "services" ? " adm-primary" : "")} type="button" role="tab" aria-selected={tab === "services"} onClick={() => setTab("services")}>Services</button>
           </div>
           {tab === "videos" && (
             <p>
@@ -183,6 +185,23 @@ export function AdminPanel({ initial, blob }: { initial: Content; blob: boolean 
         </div>
       </header>
       {error && <p className="adm-err" role="alert">{error}</p>}
+
+      {tab === "services" && (
+        <section className="adm-sec">
+          <h2>Service stickers</h2>
+          <p className="adm-note">One sticker per service. Rows hold three; a last row with one or two stickers is centred.</p>
+          {content.services.map((s, i) => (
+            <div className="adm-row adm-svc" key={i}>
+              <label>
+                Sticker {i + 1}
+                <input value={s} maxLength={40} onChange={(e) => edit((c) => ({ ...c, services: c.services.map((x, j) => (j === i ? e.target.value : x)) }))} />
+              </label>
+              <button className="adm-btn adm-danger" type="button" disabled={content.services.length <= 1} onClick={() => edit((c) => ({ ...c, services: c.services.filter((_, j) => j !== i) }))}>Delete</button>
+            </div>
+          ))}
+          <button className="adm-btn" type="button" disabled={content.services.length >= LIMITS.services} onClick={() => edit((c) => ({ ...c, services: [...c.services, ""] }))}>Add sticker ({content.services.length}/{LIMITS.services})</button>
+        </section>
+      )}
 
       {tab === "about" && <AboutEditor about={content.about} setAbout={setAbout} progress={progress} upload={upload} removeFile={removeFile} />}
 
