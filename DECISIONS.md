@@ -15,6 +15,53 @@
 <!-- ENTRIES_START — Claude inserts new entries right below this line -->
 ---
 
+## [2026-10-26] — hero-face-keyed-alpha-video-s0a7c (hero face = transparent video)
+
+**Team member:** AKL (printoutpakistan@gmail.com)
+**Status:** Done (hero swap finished; user still to watch a full loop and judge the result)
+
+### Task
+Make the hero face animate like the reference clip `refernece/Face-Only.mp4` (still head, eyes glance / blink / half-lid) using the client's own face, and finally replace the hero face with the user's new clip `Downloads/Man_blinking_and_smiling_20261026224953.mp4` with its background removed.
+
+### Changes made
+| File / Module | What changed | Why |
+|--------------|-------------|-----|
+| `src/components/HeroFace.tsx` | Rewritten as a client component: muted looping `<video>` (`/portrait/face.webm`, poster `face-poster.webp`), `play()` after 3.8s (hero intro), no play for reduced motion | Final hero: the user's clip, face only |
+| `src/app/globals.css` | Removed the old `.hf-tilt/.hf-blink/.hf-smile` keyframe loop; added `.hf-video` (absolute, contain, bottom aligned) | Old CSS loop no longer used |
+| `public/portrait/face.webm` (new) | VP9 + alpha, 542x720, 24fps, 7.17s (frames 20-191 of the source; face fade-in frames 0-19 dropped), 843 KB | Transparent face video |
+| `public/portrait/face-poster.webp` (new) | First frame with alpha | Shown before play / reduced motion / Safari |
+| `refernece/keyframes/` (new) | 7 labelled key frames E01-E07 from Face-Only.mp4, `CLIENT-base.png`, `PROMPTS.md`, contact sheet | Prompts for ChatGPT/Gemini pose generation |
+| `public/portrait/gen/` (new, from user) | 7 generated pose images of the client (E01-E07) | Input for the eye-patch version (now superseded) |
+| `public/portrait/eye/E02-E07.webp` (new) | Eye-area patches of the poses, registered to hf-base and feathered | Earlier eye-swap hero (superseded by the video, still in repo) |
+| `.env.local` | User added `GEMINI_API_KEY` (git-ignored) | Option B; the key has no image-generation quota (free tier), so the poses were made in ChatGPT/Gemini apps |
+
+### Problems & fixes
+| Problem | Root cause | Fix applied |
+|---------|-----------|-------------|
+| First try (cut-out irises moved by GSAP + clipped closed-eye overlay) looked fake to the user | Half-lid/wink from a hard-clipped overlay; sclera fill is synthetic | Abandoned; moved to generated poses |
+| Gemini API returned 429 on all image models, with two different keys | Free tier has `limit: 0` for image generation | User generated frames in the ChatGPT/Gemini apps from my prompts instead |
+| Video's grey enclosed in the turned-head glasses lens stayed solid | Enclosed bg-coloured area is not connected to the border | Treat any bg-coloured enclosed area >= 250px as transparent; tolerance 10 (compression noise made a grey halo at 3) |
+| Headless screenshots blank with `--virtual-time-budget` | GSAP intro does not advance in virtual time | `shot.mjs` over CDP with real time (Node 24 global WebSocket, port 9333) |
+
+### Decisions made
+- Reference clip Face-Only.mp4 only looks centre -> viewer's left (never right) and has no true one-eye wink, so no right-glance/wink poses were made.
+- Final hero uses the user's own clip (alpha WebM) instead of the eye-patch overlays; patch assets kept in repo but unused.
+- Safari does not render VP9-alpha WebM, so it shows the poster only. A HEVC-alpha .mov would be the fix but cannot be encoded on this PC.
+- Key = flat grey (130,130,130) background flood-filled from the border, biggest blob + near thin parts kept, 1px erode + 0.8px blur. A faint grey fringe at the top-left of the hair remains.
+
+### Current state
+Hero shows the transparent face video on the site grid (verified in real-time Chrome frames: neutral, blink, head turn). Dev server was left running on :3002 (:3000 is another process). Changes to `HeroFace.tsx` and `globals.css` are not committed; only the docs are committed by this handoff.
+
+### Next steps
+- [ ] User watches a full loop; tune start delay, edge fringe, or Safari support if needed
+- [ ] Delete unused assets: `public/portrait/eye/`, `gen/`, `hf-{base,blink,smile}.webp`, the stray WhatsApp jpegs, if not wanted
+- [ ] Remove dead `setEyes`/`EYES` face code in `src/components/Motion.tsx`
+- [ ] Pre-existing: Next dev hydration warning on `<html>` font classes ("1 Issue" overlay)
+
+---
+
+---
+
 ## [2026-10-21] — Hero portrait from client artwork + About turntable
 
 **Team member:** AKL (printoutpakistan@gmail.com)
