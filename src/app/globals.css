@@ -129,7 +129,7 @@ section[id] { scroll-margin-top: var(--nav-h); }
   --emw: calc(var(--adv) + var(--mh) * .753 + .1); /* lockup width in em: letters + portrait + gaps */
   --lock: clamp(3rem, min(calc(84.9vw / var(--emw)), calc(49svh / var(--mh))), 27rem); /* lettering size: ~85% of the width, ~49% of the height at most */
 
-  min-height: 100svh; display: grid; place-items: start center;
+  min-height: min(100svh, 1080px); display: grid; place-items: start center; /* 1080px cap: the lettering stops growing at 27rem, so taller screens only added empty space before ABOUT ME */
   padding: calc(var(--nav-h) + clamp(2rem, 10vh, 6.5rem)) var(--gutter) 2rem;
   overflow: hidden;
 }
@@ -545,16 +545,9 @@ html[data-site-font="acumin"] .hero-year { letter-spacing: .06em; }
 .band-fraktur-sm { font-size: clamp(2rem, 4vw, 3.4rem); }
 @media (max-width: 720px) { :root { --bar-h: 4rem; } }
 
-/* ---------- reels section: same padding on all four sides; a vertical list on small screens ---------- */
+/* ---------- reels section: same padding on all four sides; same side-by-side row on phones as on PC ---------- */
 .reels { --rp: clamp(1.25rem, 4vw, 3rem); padding: var(--rp); width: fit-content; max-width: 100%; }
 .reels .reelgrp { width: min(calc(var(--n) * 300px + (var(--n) - 1) * var(--gap)), calc(100vw - 2 * var(--rp))); } /* px width, so the box around it can hug it */
-@media (max-width: 720px) {
-  .reels { width: 100%; }
-  .reels .reelgrp { width: 100%; }
-  .reelgrp-row { grid-template-columns: 1fr; gap: 1.5rem; }
-  .reelgrp-item { width: min(100%, 320px); margin-inline: auto; }
-}
-
 /* grid videos (commercial, youtube) on phones: one column list, same padding on all sides as the reels */
 @media (max-width: 720px) {
   .wides { grid-template-columns: 1fr; gap: 1.5rem; padding: clamp(1.25rem, 4vw, 3rem); }
