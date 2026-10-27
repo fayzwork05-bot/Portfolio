@@ -1,14 +1,22 @@
-// Portrait layers cut from the client's storyboard artwork (public/portrait/hf-*.webp, all the same size and aligned).
-// The head tilts, and the blink / smile layers fade in over the neutral frame. See `.hf-*` in globals.css.
+"use client";
+
+import { useEffect, useRef } from "react";
+
+// Portrait animation: public/portrait/face.webm is the client's generated clip with its grey background keyed out (VP9 + alpha, 542x720,
+// 7.2s, starts and ends on the neutral stare so it loops). face-poster.webp is its first frame (shown until the hero intro lands, and
+// for reduced motion). Browsers without VP9 alpha (Safari) keep the poster.
 export function HeroFace({ className }: { className?: string }) {
+  const v = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setTimeout(() => v.current?.play().catch(() => {}), 3800); // the hero intro lands at ~4s
+    return () => clearTimeout(t);
+  }, []);
   return (
     <div className={className} aria-hidden>
-      <div className="hf-head">
-        {/* eslint-disable @next/next/no-img-element */}
-        <img src="/portrait/hf-base.webp" alt="" width={548} height={728} />
-        <img className="hf-blink" src="/portrait/hf-blink.webp" alt="" width={548} height={728} />
-        <img className="hf-smile" src="/portrait/hf-smile.webp" alt="" width={548} height={728} />
-      </div>
+      <video ref={v} className="hf-video" muted loop playsInline preload="auto" poster="/portrait/face-poster.webp" width={542} height={720}>
+        <source src="/portrait/face.webm" type="video/webm" />
+      </video>
     </div>
   );
 }

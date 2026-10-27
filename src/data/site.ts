@@ -30,6 +30,7 @@ export const tools = [
   { abbr: "Ai", name: "Illustrator", color: "#ffb347" },
   { abbr: "Au", name: "Audition", color: "#5ee6c4" },
   { abbr: "Dv", name: "DaVinci Resolve", color: "#ff7a7a", img: "/davinci.webp" },
+  { abbr: "Cc", name: "CapCut", color: "#7fe3ff" }, // test skill
 ];
 
 export const services = [
