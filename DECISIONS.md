@@ -15,6 +15,45 @@
 <!-- ENTRIES_START — Claude inserts new entries right below this line -->
 ---
 
+## [2026-10-27] — hero-video-swap-and-figure-crop (new hero clip + cropped figure video)
+
+**Team member:** AKL (printoutpakistan@gmail.com)
+**Status:** Done (user still to watch the new hero loop on the site)
+
+### Task
+Replace the hero face video with newer clips from Downloads (background removed, looping), then crop the Behance screen recording down to just the turning full-body figure.
+
+### Changes made
+| File / Module | What changed | Why |
+|--------------|-------------|-----|
+| `public/portrait/face.webm` | Replaced with `Animating_portrait_image_eyes_20261027171203.mp4`: 190 frames, VP9 + alpha, 542x720, 305 KB | New hero clip, keyed, loops neutral to neutral |
+| `public/portrait/face-poster.webp` | New first frame with alpha | Poster / reduced motion / Safari |
+| `public/portrait/face-prev.webm`, `face-poster-prev.webp` | Backups of the previous hero | Easy rollback |
+| `public/portrait/figure.mp4` (+ `Downloads/Portfolio-figure-cropped.mp4`) | Crop of `Video-Editor-Motion-Designer-Portfolio-2026-Behance (1).mp4`: crop=176:392:240:186, scaled 528x1176, no audio, 12.7s, 4.5 MB | Figure only, no Behance UI or red selection box; background kept |
+
+`HeroFace.tsx` needed no change (same 542x720). An intermediate swap to `Man_blinking_and_smiling_portrait_20261027142708.mp4` was replaced by the clip above.
+
+### Problems & fixes
+| Problem | Root cause | Fix applied |
+|---------|-----------|-------------|
+| Frame 1 of the eyes clip has a black background and tore the hair mask | Source first frame is black | Dropped the first 2 frames |
+| Light halo along ears/jaw after keying | Background is a gradient (not flat grey), so the flat-colour key left a fringe | Neighbour-relative flood fill from the border (tol 3) on a blurred grey image, keep biggest blob, erode 3 iterations, blur 0.8 |
+| `ffmpeg`/`ffprobe` not on PATH | Not installed | Use the imageio-ffmpeg binary: `Python313\Lib\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe` (has libvpx-vp9) |
+
+### Decisions made
+- Keying scripts live in the scratchpad, not the repo.
+- `figure.mp4` keeps its grid-paper background; it is not wired into any page.
+
+### Current state
+Hero plays the new keyed eyes clip. `figure.mp4` exists but is unused. The working tree also holds changes not made in this session (`page.tsx`, `globals.css`, `Turn360.tsx`, `turn360.webm`, new `turn-*.webp`) which are not committed; only the docs are committed by this handoff.
+
+### Next steps
+- [ ] User watches a full hero loop on the site (`next dev`, may land on :3002)
+- [ ] Decide whether `figure.mp4` goes in About (replacing the turntable), and whether to key out its grid background
+- [ ] Clean up unused assets (`eye/`, `gen/`, `*-prev.*`, `hf-*.webp`, WhatsApp jpegs) and dead `setEyes` code in `Motion.tsx`
+
+---
+
 ## [2026-10-26] — hero-face-keyed-alpha-video-s0a7c (hero face = transparent video)
 
 **Team member:** AKL (printoutpakistan@gmail.com)

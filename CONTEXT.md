@@ -1,6 +1,6 @@
 # CONTEXT.md — Current Status
 
-> Last updated: 2026-10-26
+> Last updated: 2026-10-27
 
 ## What are we building?
 A single-page portfolio for video editor Fayz Mehmood in a Behance-reference style (grid paper, black bands, tall glitch lettering) with the client's real portrait and a rotating full-body figure.
@@ -10,7 +10,10 @@ A single-page portfolio for video editor Fayz Mehmood in a Behance-reference sty
 - Earlier attempts this session (iris/eyelid cut-outs; eye-patch swaps from generated poses) are superseded; their assets are still in the repo.
 - Key frames and prompts from `refernece/Face-Only.mp4` are in `refernece/keyframes/`.
 
+- 2026-10-27: hero swapped to `Animating_portrait_image_eyes_...mp4` (keyed, looping); `public/portrait/figure.mp4` = cropped turning full-body figure from the Behance recording (not used on any page yet).
+
 ## Up next
+- Decide if `figure.mp4` replaces the About turntable / needs its grid background keyed out.
 - User watches a full loop; tune the start delay, the faint grey fringe at the top-left of the hair, or Safari support.
 - Clean up unused assets (`public/portrait/eye/`, `gen/`, `hf-*.webp`, stray WhatsApp jpegs) and the dead `setEyes` code in `Motion.tsx`.
 - Still open from before: smooth 360 turntable for About.
