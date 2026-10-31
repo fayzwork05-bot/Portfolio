@@ -45,6 +45,7 @@ export async function POST(req: Request) {
     const result = await handleUploadPresigned({
       body,
       request: req,
+      webhookPublicKey: process.env.PORTFOLIO_WEBHOOK_PUBLIC_KEY || "unused", // the SDK demands one, but it only verifies upload-completed callbacks, which we never register (no onUploadCompleted)
       getSignedToken: async (pathname, clientPayload) => {
         const { id, kind } = JSON.parse(clientPayload ?? "{}") as { id?: string; kind?: UploadKind };
         const k = kind && KINDS[kind];

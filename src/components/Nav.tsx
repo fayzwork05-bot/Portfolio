@@ -5,7 +5,7 @@ export function Nav() {
     <header className="nav">
       <a className="nav-mark" href="#top" aria-label={`${site.name}, back to top`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.webp" alt={site.name} width={1132} height={619} />
+        <img src="/logo.webp" alt={site.name} width={1697} height={927} />
       </a>
       <nav aria-label="Main">
         <ul>

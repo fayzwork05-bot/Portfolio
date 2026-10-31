@@ -3,6 +3,7 @@ import { VideoSections } from "@/components/VideoSections";
 import { getContent } from "@/lib/store";
 import { GlitchWord, RollYear, BlurDefs } from "@/components/GlitchWord";
 import { HeroFace } from "@/components/HeroFace";
+import { Turn360 } from "@/components/Turn360";
 import { Marquee } from "@/components/Marquee";
 import { VideoCard } from "@/components/VideoCard";
 import { Sunburst, PlayTile, Sparkle, Quatrefoil, Arrow } from "@/components/Glyphs";
@@ -83,7 +84,7 @@ export default async function Home() {
             <div className="about-figure">
               <div className="selbox">
                 <div className="selbox-vid">
-                  <video src="/portrait/about.mp4" autoPlay loop muted playsInline preload="auto" aria-label={`${site.name}, full length`} />
+                  <Turn360 label={`${site.name}, full length, turning`} />
                 </div>
                 <i className="h h-tl" />
                 <i className="h h-tr" />
