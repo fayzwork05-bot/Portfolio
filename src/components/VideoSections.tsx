@@ -11,6 +11,7 @@ const toClip = (v: Video, ratio: Clip["ratio"], i: number): Clip => ({
   ratio,
   hue: (i * 47 + 8) % 360,
   src: v.file ? `/media/${v.file}` : undefined,
+  muted: v.muted,
   poster: v.poster ? `/media/${v.poster}` : undefined,
 });
 

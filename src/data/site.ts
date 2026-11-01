@@ -50,6 +50,7 @@ export type Clip = {
   hue: number;
   src?: string;
   poster?: string;
+  muted?: boolean;
 };
 
 export const showreel: Clip = {

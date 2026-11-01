@@ -110,18 +110,23 @@ export default async function Home() {
             </div>
             <div className="about-side">
               <h3 className="h-sub">Skills</h3>
-              <ul className="tools">
-                {about.skills.map((t) => (
-                  <li key={t.id} aria-label={t.name} title={t.name} style={{ "--tool": t.color } as React.CSSProperties}>
-                    {t.icon ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={t.icon.startsWith("/") ? t.icon : `/media/${t.icon}`} alt="" width={256} height={256} />
-                    ) : (
-                      t.abbr
-                    )}
-                  </li>
-                ))}
-              </ul>
+              {(() => {
+                const top = Math.ceil(about.skills.length / 2); // two rows; an odd one out goes on top
+                return [about.skills.slice(0, top), about.skills.slice(top)].map((row, r) => (
+                  <ul key={r} className="tools">
+                    {row.map((t) => (
+                      <li key={t.id} aria-label={t.name} title={t.name} style={{ "--tool": t.color } as React.CSSProperties}>
+                        {t.icon ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={t.icon.startsWith("/") ? t.icon : `/media/${t.icon}`} alt="" width={256} height={256} />
+                        ) : (
+                          t.abbr
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ));
+              })()}
               <h3 className="h-sub">Experience</h3>
               {about.experience.map((e, i) => (
                 <p key={i} className="about-line">

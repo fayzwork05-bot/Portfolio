@@ -249,6 +249,10 @@ export function AdminPanel({ initial, blob }: { initial: Content; blob: boolean 
                       <input value={v.client} maxLength={80} onChange={(e) => setSection(s.id, (x) => ({ ...x, videos: x.videos.map((y) => (y.id === v.id ? { ...y, client: e.target.value } : y)) }))} />
                     </label>
                   </div>
+                  <label className="adm-check">
+                    <input type="checkbox" checked={!!v.muted} onChange={(e) => setSection(s.id, (x) => ({ ...x, videos: x.videos.map((y) => (y.id === v.id ? { ...y, muted: e.target.checked } : y)) }))} />
+                    Muted (no sound)
+                  </label>
                   <div className="adm-files">
                     <File label={`Video ${k + 1}`} accept="video/mp4,video/webm,video/quicktime" current={v.file} progress={progress[v.id + "video"]} disabled={!v.file && full} hint={`MP4, WebM or MOV, up to ${mb(LIMITS.videoBytes)}`} onPick={(f) => upload(v.id, "video", f)} onRemove={() => removeFile(v.id, "video")} />
                     <File label="Poster image (optional)" accept="image/jpeg,image/png,image/webp" current={v.poster} progress={progress[v.id + "poster"]} hint={`JPG, PNG or WebP, up to ${mb(LIMITS.posterBytes)}`} onPick={(f) => upload(v.id, "poster", f)} onRemove={() => removeFile(v.id, "poster")} />

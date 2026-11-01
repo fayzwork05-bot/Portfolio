@@ -3,7 +3,7 @@ import { showreel, reels, commercial, youtube, site, tools, education, experienc
 // Shared by the server (validation, storage) and the admin panel (limits shown in the UI). No Node APIs here.
 
 export type SectionType = "full" | "reels" | "grid";
-export type Video = { id: string; title: string; client: string; file: string | null; poster: string | null };
+export type Video = { id: string; title: string; client: string; file: string | null; poster: string | null; muted?: boolean };
 export type Section = { id: string; type: SectionType; marquee: string; heading: string; videos: Video[] };
 export type Skill = { id: string; name: string; abbr: string; color: string; icon: string | null }; // icon: an uploaded file name, or a bundled "/path" image
 export type About = {
@@ -107,7 +107,7 @@ export function normalize(input: unknown, current: Content): { ok: true; content
       if (!ID_RE.test(v?.id) || ids.has(v.id)) return { ok: false, error: "Invalid video id." };
       ids.add(v.id);
       const old = known.get(v.id);
-      videos.push({ id: v.id, title: str(v.title, 80), client: str(v.client, 80), file: old?.file ?? null, poster: old?.poster ?? null });
+      videos.push({ id: v.id, title: str(v.title, 80), client: str(v.client, 80), muted: v.muted === true, file: old?.file ?? null, poster: old?.poster ?? null });
     }
     out.push({ id: s.id, type: s.type, marquee: str(s.marquee, 60), heading: s.type === "full" ? str(s.heading, 40) : "", videos });
   }

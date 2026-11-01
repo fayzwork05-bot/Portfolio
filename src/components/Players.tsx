@@ -14,74 +14,72 @@ const Pause = () => (
   </svg>
 );
 
-/** One timeline over a list of clips: they play one after another, never together. A clip without `src` is simulated. */
+/** One timeline over a list of clips: they all play together; the bar spans the longest clip. A clip without `src` is simulated. */
 function useSequence(clips: readonly Clip[]) {
-  const [idx, setIdx] = useState(0);
-  const [local, setLocal] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [durs, setDurs] = useState(() => clips.map(() => SAMPLE_LEN));
   const vids = useRef<(HTMLVideoElement | null)[]>([]);
-  const localRef = useRef(0);
-  const put = (v: number) => {
-    localRef.current = v;
-    setLocal(v);
-  };
+  const fake = useRef<number[]>(clips.map(() => 0)); // clock of each placeholder clip
+  const total = Math.max(...durs);
 
-  const total = durs.reduce((a, b) => a + b, 0);
-  const elapsed = durs.slice(0, idx).reduce((a, b) => a + b, 0) + local;
-
-  const next = () => {
-    if (idx < clips.length - 1) {
-      setIdx(idx + 1);
-      put(0);
-    } else {
-      setPlaying(false);
-      setIdx(0);
-      put(0);
-    }
-  };
-
-  // the active clip starts at `local`, every other clip is paused
-  useEffect(() => {
-    vids.current.forEach((v, i) => {
+  // put every clip at time t (a clip shorter than t rests on its last frame); resume the ones that still have footage
+  const place = (t: number, run: boolean) => {
+    clips.forEach((_, i) => {
+      const at = Math.min(t, durs[i]);
+      fake.current[i] = at;
+      const v = vids.current[i];
       if (!v) return;
-      if (i === idx) v.currentTime = localRef.current;
+      v.currentTime = at;
+      if (run && t < durs[i]) v.play().catch(() => setPlaying(false));
       else v.pause();
     });
-  }, [idx]);
+  };
 
   useEffect(() => {
-    const v = vids.current[idx];
-    if (!v) return;
-    if (playing) v.play().catch(() => setPlaying(false));
-    else v.pause();
-  }, [idx, playing]);
-
-  // placeholder clips: advance a fake clock
-  useEffect(() => {
-    if (!playing || clips[idx].src) return;
+    if (!playing) return;
     let last = performance.now(),
       raf = 0;
     const tick = (now: number) => {
-      put(localRef.current + (now - last) / 1000);
+      const dt = (now - last) / 1000;
       last = now;
-      if (localRef.current >= durs[idx]) next();
-      else raf = requestAnimationFrame(tick);
+      let e = 0,
+        done = true;
+      clips.forEach((c, i) => {
+        const v = vids.current[i];
+        const t = c.src && v ? v.currentTime : (fake.current[i] = Math.min(durs[i], fake.current[i] + dt));
+        e = Math.max(e, t);
+        if (!(c.src && v ? v.ended || t >= durs[i] - 0.05 : t >= durs[i])) done = false;
+      });
+      if (done) {
+        setElapsed(total);
+        setPlaying(false);
+      } else {
+        setElapsed(e);
+        raf = requestAnimationFrame(tick);
+      }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing, idx]);
+  }, [playing, durs]);
+
+  const toggle = () => {
+    if (playing) {
+      vids.current.forEach((v) => v?.pause());
+      setPlaying(false);
+      return;
+    }
+    const from = elapsed >= total - 0.05 ? 0 : elapsed; // a finished run starts over
+    place(from, true);
+    setElapsed(from);
+    setPlaying(true);
+  };
 
   const seek = (t: number) => {
-    let rest = Math.min(Math.max(t, 0), total - 0.01),
-      j = 0;
-    while (j < durs.length - 1 && rest >= durs[j]) rest -= durs[j++];
-    put(rest);
-    if (j === idx) {
-      const v = vids.current[j];
-      if (v) v.currentTime = rest;
-    } else setIdx(j);
+    const at = Math.min(Math.max(t, 0), total);
+    place(at, playing);
+    setElapsed(at);
   };
 
   const videoProps = (i: number) => ({
@@ -94,25 +92,18 @@ function useSequence(clips: readonly Clip[]) {
       const len = e.currentTarget.duration; // read now: currentTarget is gone by the time the updater runs
       if (Number.isFinite(len) && len > 0) setDurs((d) => d.map((x, k) => (k === i ? len : x)));
     },
-    onTimeUpdate: (e: React.SyntheticEvent<HTMLVideoElement>) => {
-      if (i === idx) put(e.currentTarget.currentTime);
-    },
-    onEnded: () => {
-      if (i === idx) next();
-    },
   });
 
-  return { idx, playing, total, elapsed, durs, toggle: () => setPlaying((p) => !p), seek, videoProps };
+  return { playing, total, elapsed, toggle, seek, videoProps };
 }
 
 type Seq = ReturnType<typeof useSequence>;
 
-function Bar({ s, marks, label }: { s: Seq; marks?: boolean; label: string }) {
+function Bar({ s, label }: { s: Seq; label: string }) {
   const at = (e: React.PointerEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     s.seek(((e.clientX - r.left) / r.width) * s.total);
   };
-  const cum = s.durs.slice(0, -1).reduce<number[]>((a, d) => [...a, (a.at(-1) ?? 0) + d], []);
   return (
     <div
       className="seq-bar"
@@ -136,14 +127,13 @@ function Bar({ s, marks, label }: { s: Seq; marks?: boolean; label: string }) {
       }}
     >
       <i className="seq-fill" style={{ width: `${(s.elapsed / s.total) * 100}%` }} />
-      {marks && cum.map((c, i) => <b key={i} className="seq-mark" style={{ left: `${(c / s.total) * 100}%` }} />)}
     </div>
   );
 }
 
 function Frame({ clip, s, i }: { clip: Clip; s: Seq; i: number }) {
   return clip.src ? (
-    <video src={clip.src + "#t=0.001"} poster={clip.poster} {...s.videoProps(i)} />
+    <video src={clip.src + "#t=0.001"} muted={clip.muted} poster={clip.poster} {...s.videoProps(i)} />
   ) : (
     <>
       {clip.poster ? (
@@ -173,14 +163,14 @@ export function FeatureVideo({ clip }: { clip: Clip }) {
   );
 }
 
-/** Type 2: two or three vertical reels that share one play button and one time bar and play in order. */
+/** Type 2: two or three vertical reels that share one play button and one time bar and play together. */
 export function ReelGroup({ clips }: { clips: readonly [Clip, Clip] | readonly [Clip, Clip, Clip] }) {
   const s = useSequence(clips);
   return (
     <div className="reelgrp" style={{ "--n": clips.length } as React.CSSProperties}>
       <div className="reelgrp-row">
         {clips.map((c, i) => (
-          <figure key={c.id} className={"reelgrp-item" + (s.playing && i !== s.idx ? " is-dim" : "")}>
+          <figure key={c.id} className="reelgrp-item">
             <div className="reelgrp-frame">
               <Frame clip={c} s={s} i={i} />
             </div>
@@ -195,7 +185,7 @@ export function ReelGroup({ clips }: { clips: readonly [Clip, Clip] | readonly [
         <button type="button" className="reelgrp-play" onClick={s.toggle} aria-label={s.playing ? "Pause reels" : "Play reels"}>
           {s.playing ? <Pause /> : <PlayArrow />}
         </button>
-        <Bar s={s} marks label="All reels timeline" />
+        <Bar s={s} label="All reels timeline" />
         <span className="reelgrp-time">
           {fmt(s.elapsed)} / {fmt(s.total)}
         </span>
