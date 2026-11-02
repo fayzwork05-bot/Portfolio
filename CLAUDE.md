@@ -1,4 +1,4 @@
-> Last synced: 2026-10-27
+> Last synced: 2026-11-02
 
 # Fayz Mehmood portfolio
 Next.js 16 (App Router) + TypeScript + Tailwind v4 + GSAP. Single-page video-editor portfolio modelled on a Behance reference (visual language only). See PRODUCT.md. Content lives in `src/data/`, tokens in CSS variables.
@@ -15,3 +15,6 @@ Next.js 16 (App Router) + TypeScript + Tailwind v4 + GSAP. Single-page video-edi
 
 ## Testing notes
 Headless Chrome `--virtual-time-budget` does not run the GSAP intro or video; drive Chrome over CDP in real time instead (Node 24 has a global WebSocket; screenshot at ~6-12s after load). Scroll/drag tests need CDP. Port 3000 may be taken by another process, so `next dev` can land on :3002. Git repo (branch main); portrait/hero asset changes may be uncommitted.
+
+## Admin-editable content
+`src/lib/content.ts` defines `Content` (sections, about, services, contact), saved via `/admin` to `data/content.json` or Vercel Blob. Contact (email, phone, WhatsApp digits, up to 4 extra links) is edited in the Contact tab and rendered by the `#contact` section in `page.tsx`; `site.ts` values are only the seed.

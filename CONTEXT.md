@@ -1,6 +1,6 @@
 # CONTEXT.md — Current Status
 
-> Last updated: 2026-10-27
+> Last updated: 2026-11-02
 
 ## What are we building?
 A single-page portfolio for video editor Fayz Mehmood in a Behance-reference style (grid paper, black bands, tall glitch lettering) with the client's real portrait and a rotating full-body figure.
@@ -12,7 +12,10 @@ A single-page portfolio for video editor Fayz Mehmood in a Behance-reference sty
 
 - 2026-10-27: hero swapped to `Animating_portrait_image_eyes_...mp4` (keyed, looping); `public/portrait/figure.mp4` = cropped turning full-body figure from the Behance recording (not used on any page yet).
 
+- 2026-11-02: contact details are now editable in `/admin` > Contact (email, phone, WhatsApp, extra links); pushed to origin/main (cb2712a).
+
 ## Up next
+- Confirm the host deployed cb2712a, then enter real contact details in `/admin`.
 - Decide if `figure.mp4` replaces the About turntable / needs its grid background keyed out.
 - User watches a full loop; tune the start delay, the faint grey fringe at the top-left of the hair, or Safari support.
 - Clean up unused assets (`public/portrait/eye/`, `gen/`, `hf-*.webp`, stray WhatsApp jpegs) and the dead `setEyes` code in `Motion.tsx`.
@@ -23,7 +26,7 @@ A single-page portfolio for video editor Fayz Mehmood in a Behance-reference sty
 - `--emw` in `globals.css` assumes portrait ratio .753 (542x720 matches).
 - Headless Chrome virtual time does not run the GSAP intro/video; use CDP in real time.
 - The Gemini key in `.env.local` has no image-generation quota (429 on the free tier).
-- `HeroFace.tsx` / `globals.css` / new portrait assets are not committed; only the docs are.
+- Contact section shows placeholder email/phone until real values are saved in `/admin`.
 - Port 3000 is another process; `next dev` used :3002. The dev server may still be running.
 - Next dev shows a pre-existing hydration warning on `<html>` font classes.
 

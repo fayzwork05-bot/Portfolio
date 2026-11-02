@@ -15,6 +15,42 @@
 <!-- ENTRIES_START — Claude inserts new entries right below this line -->
 ---
 
+## [2026-11-02] — editable-contact-details (Contact tab in /admin)
+
+**Team member:** Wisam Ahmed
+**Status:** Done (pushed to origin/main as cb2712a; live only if the host auto-deploys from GitHub, not confirmed)
+
+### Task
+Make the site's contact information dynamic: editable from the admin panel (email, phone, WhatsApp, other links) instead of hard-coded in `site.ts`.
+
+### Changes made
+| File / Module | What changed | Why |
+|--------------|-------------|-----|
+| `src/lib/content.ts` | New `Contact` type, `Content.contact`, `seedContact()`, `normalizeContact()`, `LIMITS.contactExtra` (4) | Contact is stored with the rest of the admin content |
+| `src/components/AdminPanel.tsx` | New **Contact** tab: email, phone, WhatsApp number, up to 4 name+link pairs | Lets the owner edit without code |
+| `src/app/page.tsx` | Contact section renders from `content.contact`; empty field hides its button; phone alone becomes a `tel:` button | Was reading `site.email/phone/whatsapp` |
+
+### Problems & fixes
+| Problem | Root cause | Fix applied |
+|---------|-----------|-------------|
+| Extra links could carry `javascript:` URLs | Free-text URL field | `normalizeContact` keeps only `https?:`, `mailto:`, `tel:` links |
+| Old saved `content.json` has no `contact` | Field is new | `normalize` falls back to `seedContact()` (placeholders from `site.ts`) |
+
+### Decisions made
+- WhatsApp stored as digits only; link built as `https://wa.me/<digits>`.
+- "One bar" in the request was read as the Contact section at the bottom; the top nav still just has a "Hire me" anchor to it. Not confirmed with the user.
+- Upload/attach API routes needed no change (they spread the stored content).
+
+### Current state
+Contact is editable at `/admin` > Contact. Until the owner saves real values the site shows placeholders (`hello@example.com`, `+00 000 000 0000`). `tsc --noEmit` is clean; not tested in a browser.
+
+### Next steps
+- [ ] Confirm the host (Vercel?) deployed cb2712a
+- [ ] Enter real email/phone/WhatsApp in `/admin` > Contact
+- [ ] If the user meant contact info inside the top nav bar, add it there
+
+---
+
 ## [2026-10-27] — hero-video-swap-and-figure-crop (new hero clip + cropped figure video)
 
 **Team member:** AKL (printoutpakistan@gmail.com)
