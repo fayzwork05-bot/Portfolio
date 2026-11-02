@@ -15,7 +15,8 @@ export type About = {
   experience: { when: string; what: string; detail: string }[];
   skills: Skill[];
 };
-export type Content = { sections: Section[]; about: About; services: string[] };
+export type Contact = { email: string; phone: string; whatsapp: string; extra: { label: string; url: string }[] }; // whatsapp: digits only, empty hides the button
+export type Content = { sections: Section[]; about: About; services: string[]; contact: Contact };
 
 export const LIMITS = {
   uploads: 20, // uploaded video files in total, across every section
@@ -26,6 +27,7 @@ export const LIMITS = {
   iconMax: 1024,
   skills: 12,
   services: 12, // service stickers
+  contactExtra: 4, // extra contact links (Instagram, LinkedIn, ...)
   listItems: 4, // education / experience entries
   posterBytes: 8 * 1024 * 1024,
   // videos per section
@@ -67,9 +69,12 @@ export const seedAbout = (): About => ({
   skills: tools.map((t) => ({ id: "sk" + t.abbr.toLowerCase(), name: t.name, abbr: t.abbr, color: t.color, icon: (t as { img?: string }).img ?? null })),
 });
 
+export const seedContact = (): Contact => ({ email: site.email, phone: site.phone, whatsapp: site.whatsapp.replace(/\D/g, ""), extra: [] });
+
 /** What the site shows before anything is saved: the sample placeholders. */
 export const seedContent = (): Content => ({
   about: seedAbout(),
+  contact: seedContact(),
   services: [...services],
   sections: [
     { id: "secshow", type: "full", marquee: "SHOWREEL", heading: "Showreel", videos: [seedVideo(showreel)] },
@@ -119,7 +124,16 @@ export function normalize(input: unknown, current: Content): { ok: true; content
     if (!Array.isArray(given) || given.length < 1 || given.length > LIMITS.services) return { ok: false, error: `Services: 1 to ${LIMITS.services} stickers.` };
     svc = given.map((s) => str(s, 40));
   }
-  return { ok: true, content: { sections: out, about: about.about, services: svc } };
+  return { ok: true, content: { sections: out, about: about.about, services: svc, contact: normalizeContact((input as Content).contact, current.contact ?? seedContact()) } };
+}
+
+function normalizeContact(input: Contact | undefined, current: Contact): Contact {
+  if (!input) return current;
+  const extra = (Array.isArray(input.extra) ? input.extra : [])
+    .map((x) => ({ label: str(x?.label, 30), url: str(x?.url, 200) }))
+    .filter((x) => /^(https?:\/\/|mailto:|tel:)/i.test(x.url)) // never javascript: etc.
+    .slice(0, LIMITS.contactExtra);
+  return { email: str(input.email, 120), phone: str(input.phone, 40), whatsapp: str(input.whatsapp, 20).replace(/\D/g, ""), extra };
 }
 
 /** An icon name is only kept if the server already had it (uploads go through the upload route) and still looks like one of ours. */

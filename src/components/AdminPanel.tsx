@@ -141,7 +141,8 @@ export function AdminPanel({ initial, blob }: { initial: Content; blob: boolean 
 
   const used = uploadedCount(content);
   const full = used >= LIMITS.uploads;
-  const [tab, setTab] = useState<"videos" | "about" | "services">("videos");
+  const [tab, setTab] = useState<"videos" | "about" | "services" | "contact">("videos");
+  const setContact = (fn: (c: Content["contact"]) => Content["contact"]) => edit((c) => ({ ...c, contact: fn(c.contact) }));
   const setAbout = (fn: (a: About) => About) => edit((c) => ({ ...c, about: fn(c.about) }));
   const [newType, setNewType] = useState<SectionType>("grid");
   const [newText, setNewText] = useState("");
@@ -165,11 +166,12 @@ export function AdminPanel({ initial, blob }: { initial: Content; blob: boolean 
     <main className="adm">
       <header className="adm-top">
         <div>
-          <h1>{tab === "videos" ? "Video sections" : tab === "about" ? "About section" : "Services"}</h1>
+          <h1>{tab === "videos" ? "Video sections" : tab === "about" ? "About section" : tab === "contact" ? "Contact" : "Services"}</h1>
           <div className="adm-tabs" role="tablist">
             <button className={"adm-btn" + (tab === "videos" ? " adm-primary" : "")} type="button" role="tab" aria-selected={tab === "videos"} onClick={() => setTab("videos")}>Video sections</button>
             <button className={"adm-btn" + (tab === "about" ? " adm-primary" : "")} type="button" role="tab" aria-selected={tab === "about"} onClick={() => setTab("about")}>About section</button>
             <button className={"adm-btn" + (tab === "services" ? " adm-primary" : "")} type="button" role="tab" aria-selected={tab === "services"} onClick={() => setTab("services")}>Services</button>
+            <button className={"adm-btn" + (tab === "contact" ? " adm-primary" : "")} type="button" role="tab" aria-selected={tab === "contact"} onClick={() => setTab("contact")}>Contact</button>
           </div>
           {tab === "videos" && (
             <p>
@@ -200,6 +202,28 @@ export function AdminPanel({ initial, blob }: { initial: Content; blob: boolean 
             </div>
           ))}
           <button className="adm-btn" type="button" disabled={content.services.length >= LIMITS.services} onClick={() => edit((c) => ({ ...c, services: [...c.services, ""] }))}>Add sticker ({content.services.length}/{LIMITS.services})</button>
+        </section>
+      )}
+
+      {tab === "contact" && (
+        <section className="adm-sec">
+          <h2>Contact details</h2>
+          <p className="adm-note">Shown in the Contact section of the site. Leave a field empty to hide its button.</p>
+          <div className="adm-row">
+            <label>Email<input type="email" value={content.contact.email} maxLength={120} onChange={(e) => setContact((c) => ({ ...c, email: e.target.value }))} /></label>
+            <label>Phone<input type="tel" value={content.contact.phone} maxLength={40} onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))} /></label>
+            <label>WhatsApp number (with country code)<input value={content.contact.whatsapp} maxLength={20} placeholder="923001234567" onChange={(e) => setContact((c) => ({ ...c, whatsapp: e.target.value }))} /></label>
+          </div>
+          <h2>Other links</h2>
+          <p className="adm-note">Instagram, LinkedIn, Behance... The link must start with https://, mailto: or tel:.</p>
+          {content.contact.extra.map((x, i) => (
+            <div className="adm-row adm-svc" key={i}>
+              <label>Name<input value={x.label} maxLength={30} onChange={(e) => setContact((c) => ({ ...c, extra: c.extra.map((y, j) => (j === i ? { ...y, label: e.target.value } : y)) }))} /></label>
+              <label>Link<input value={x.url} maxLength={200} placeholder="https://" onChange={(e) => setContact((c) => ({ ...c, extra: c.extra.map((y, j) => (j === i ? { ...y, url: e.target.value } : y)) }))} /></label>
+              <button className="adm-btn adm-danger" type="button" onClick={() => setContact((c) => ({ ...c, extra: c.extra.filter((_, j) => j !== i) }))}>Delete</button>
+            </div>
+          ))}
+          <button className="adm-btn" type="button" disabled={content.contact.extra.length >= LIMITS.contactExtra} onClick={() => setContact((c) => ({ ...c, extra: [...c.extra, { label: "", url: "" }] }))}>Add link ({content.contact.extra.length}/{LIMITS.contactExtra})</button>
         </section>
       )}
 

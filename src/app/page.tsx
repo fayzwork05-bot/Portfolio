@@ -19,6 +19,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const content = await getContent();
   const about = content.about;
+  const contact = content.contact;
   return (
     <>
       <a className="skip" href="#main">
@@ -177,12 +178,26 @@ export default async function Home() {
             <h2>Have a video in mind?</h2>
             <p>Send the brief, the footage and the deadline. I reply within one working day.</p>
             <div className="contact-actions">
-              <a className="btn btn-red btn-big" href={`mailto:${site.email}`}>
-                {site.email} <Arrow />
-              </a>
-              <a className="btn btn-paper btn-big" href={site.whatsapp}>
-                WhatsApp {site.phone} <Arrow />
-              </a>
+              {contact.email && (
+                <a className="btn btn-red btn-big" href={`mailto:${contact.email}`}>
+                  {contact.email} <Arrow />
+                </a>
+              )}
+              {contact.whatsapp && (
+                <a className="btn btn-paper btn-big" href={`https://wa.me/${contact.whatsapp}`}>
+                  WhatsApp {contact.phone} <Arrow />
+                </a>
+              )}
+              {contact.phone && !contact.whatsapp && (
+                <a className="btn btn-paper btn-big" href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}>
+                  {contact.phone} <Arrow />
+                </a>
+              )}
+              {contact.extra.map((x, i) => (
+                <a key={i} className="btn btn-paper btn-big" href={x.url} target="_blank" rel="noreferrer">
+                  {x.label || x.url} <Arrow />
+                </a>
+              ))}
             </div>
           </div>
         </section>
