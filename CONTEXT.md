@@ -1,6 +1,6 @@
 # CONTEXT.md — Current Status
 
-> Last updated: 2026-11-02
+> Last updated: 2026-11-04
 
 ## What are we building?
 A single-page portfolio for video editor Fayz Mehmood in a Behance-reference style (grid paper, black bands, tall glitch lettering) with the client's real portrait and a rotating full-body figure.
@@ -14,10 +14,12 @@ A single-page portfolio for video editor Fayz Mehmood in a Behance-reference sty
 
 - 2026-11-02: contact details are now editable in `/admin` > Contact (email, phone, WhatsApp, extra links); pushed to origin/main (cb2712a).
 
+- 2026-11-04: hero face video re-keyed clean (no ear/hair fringe). Big screens: the page scales with the viewport from 1500px up to 6000px (root font-size follows width, rules at the end of `globals.css`); the temporary A/B/C switch was removed after the client chose Scale up.
+
 ## Up next
-- Confirm the host deployed cb2712a, then enter real contact details in `/admin`.
+- Confirm the host deployed the latest commit, then enter real contact details in `/admin`.
 - Decide if `figure.mp4` replaces the About turntable / needs its grid background keyed out.
-- User watches a full loop; tune the start delay, the faint grey fringe at the top-left of the hair, or Safari support.
+- User watches a full loop; tune the start delay or Safari support (the fringe is fixed).
 - Clean up unused assets (`public/portrait/eye/`, `gen/`, `hf-*.webp`, stray WhatsApp jpegs) and the dead `setEyes` code in `Motion.tsx`.
 - Still open from before: smooth 360 turntable for About.
 
@@ -28,7 +30,8 @@ A single-page portfolio for video editor Fayz Mehmood in a Behance-reference sty
 - The Gemini key in `.env.local` has no image-generation quota (429 on the free tier).
 - Contact section shows placeholder email/phone until real values are saved in `/admin`.
 - Port 3000 is another process; `next dev` used :3002. The dev server may still be running.
-- Next dev shows a pre-existing hydration warning on `<html>` font classes.
+- Next dev may show a hydration warning on `<html>` (font classes + the inline `js` script); `suppressHydrationWarning` is set.
+- Big screens: rem-based. New fixed-px sizes will NOT scale above 1500px; use rem. Scaling caps at 6000px.
 
 ---
 

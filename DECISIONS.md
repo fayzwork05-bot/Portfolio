@@ -15,6 +15,42 @@
 <!-- ENTRIES_START — Claude inserts new entries right below this line -->
 ---
 
+## [2026-11-04] — hero re-key + scale-up layout for big screens
+
+**Team member:** Wisam Ahmed
+**Status:** Done (committed and pushed to origin/main; live only if the host auto-deploys from GitHub, not confirmed)
+
+### Task
+(1) Remove the background fringe at the left ear / top of hair in the hero face video. (2) Fix the layout on very large screens (client has a huge monitor): the site left big empty margins past ~2000px.
+
+### Changes made
+| File / Module | What changed | Why |
+|--------------|-------------|-----|
+| `public/portrait/face.webm`, `face-poster.webp` | Re-keyed: flood-fill the background through non-ink pixels (threshold 100) against the ink outline; VP9+alpha 542x720, 24fps, 190 frames | Old key left a grey fringe at the ear and hair top |
+| `src/app/globals.css` (end of file) | "big screens" block: from 1500px `html:root` font-size = `100vw/93.75` (16px at 1500, ~27px at 2560, 64px cap at 6000px); px values re-stated in rem (gutter, nav, cut height, wrap/about widths, notes, hero `--lock` cap, trio, nav mark, selbox + handles, tools, about text, mountain rim, services title, bands, contact h2, reel widths, play buttons) | Whole page grows with the screen instead of floating in empty space |
+
+### Problems & fixes
+| Problem | Root cause | Fix applied |
+|---------|-----------|-------------|
+| Scaling stopped at 3840px | First version capped root size at 41px | Cap moved to 64px at 6000px |
+| Next dev "1 Issue" badge | Inline script adds `js` class to `<html>` before hydration | `suppressHydrationWarning` kept on `<html>` |
+
+### Decisions made
+- Three options were built and shown with a switch pill (Original, A Scale up, B Framed sheet, C Wide layout). The client chose **A Scale up**; the switch, `ScreenSwitch.tsx`, the rails and the B and C CSS were deleted.
+- Scaling is by viewport width only and stops at 6000px (real viewports above ~5120 CSS px are very rare: 4K at 100% = 3840, 5K/32:9 = 5120, 6K XDR at 100% = 6016). A 32:9 screen (5120x1440) gets a height-limited hero with side space; accepted.
+- The three static mockups in `large-screen-options/` are untracked and not committed; safe to delete.
+
+### Current state
+Site scales fluidly 1500-6000px wide; verified at 2560x1440, 3840x2160, 5120x1440 and 6000x3375 with real content. Hero face has no background fringe. Pushed to main.
+
+### Next steps
+- [ ] Confirm the host deployed the latest commit; look at it on the client's big screen.
+- [ ] Enter real contact details in `/admin` > Contact.
+- [ ] Delete `large-screen-options/` if not needed.
+- [ ] Tablet/laptop (<1500px) is unchanged; only large screens were reviewed.
+
+---
+
 ## [2026-11-02] — editable-contact-details (Contact tab in /admin)
 
 **Team member:** Wisam Ahmed

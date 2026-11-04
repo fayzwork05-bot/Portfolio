@@ -1,4 +1,4 @@
-> Last synced: 2026-11-02
+> Last synced: 2026-11-04
 
 # Fayz Mehmood portfolio
 Next.js 16 (App Router) + TypeScript + Tailwind v4 + GSAP. Single-page video-editor portfolio modelled on a Behance reference (visual language only). See PRODUCT.md. Content lives in `src/data/`, tokens in CSS variables.
@@ -12,6 +12,9 @@ Next.js 16 (App Router) + TypeScript + Tailwind v4 + GSAP. Single-page video-edi
 
 - `public/portrait/figure.mp4`: cropped full-body turning figure (528x1176, no alpha, unused). `face-prev.*` are backups of the previous hero.
 - No ffmpeg on PATH: use the imageio-ffmpeg binary (in `Python313/Lib/site-packages/imageio_ffmpeg/binaries/`, `ffmpeg-win-x86_64-v7.1.exe`, has libvpx-vp9).
+
+## Big screens
+From 1500px the root font size is `100vw/93.75` (16px at 1500, ~27px at 2560), capped at 64px from 6000px; the block is at the end of `globals.css` (`html:root` selectors, px values re-stated in rem). Use rem for new sizes or they will not scale.
 
 ## Testing notes
 Headless Chrome `--virtual-time-budget` does not run the GSAP intro or video; drive Chrome over CDP in real time instead (Node 24 has a global WebSocket; screenshot at ~6-12s after load). Scroll/drag tests need CDP. Port 3000 may be taken by another process, so `next dev` can land on :3002. Git repo (branch main); portrait/hero asset changes may be uncommitted.
