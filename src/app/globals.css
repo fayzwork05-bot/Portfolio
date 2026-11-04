@@ -539,3 +539,35 @@ html[data-site-font="acumin"] .hero-year { letter-spacing: .06em; }
 .selbox-vid video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; } /* transparent clip: the page paper shows through */
 
 .adm-svc { grid-template-columns: 1fr auto; align-items: end; }
+
+/* ---------- big screens: from 1500px the root size follows the width up to 6000px, so everything in rem grows with the screen ---------- */
+/* A. SCALE UP: from 1500px the root size follows the width (1500px = 16px as today, 2560px = ~27px), so everything in rem grows with the screen.
+   The px values that would stay small are re-stated in rem here. */
+@media (min-width: 1500px) {
+  html:root { font-size: calc(100vw / 93.75); }
+  html:root {
+    --gutter: clamp(1rem, 4vw, 3.5rem); --nav-h: 4rem; --cut-h: clamp(16.25rem, 31vw, 27.5rem);
+  }
+  html:root .wrap, html:root .about-grid { max-width: 81.25rem; }
+  html:root .notes { max-width: 70rem; }
+  html:root .hero { --lock: clamp(3rem, min(calc(84.9vw / var(--emw)), calc(49svh / var(--mh))), 45rem); }
+  html:root .tr { width: clamp(2.9rem, 5.2vw, 5rem); }
+  html:root .nav-mark { height: 3.25rem; }
+  html:root .selbox { width: min(100%, 17.5rem); margin: .875rem; }
+  html:root .h { width: .875rem; height: .875rem; }
+  html:root .h-tl { left: -.5rem; top: -.5rem; } html:root .h-tr { right: -.5rem; top: -.5rem; }
+  html:root .h-bl { left: -.5rem; bottom: -.5rem; } html:root .h-br { right: -.5rem; bottom: -.5rem; }
+  html:root .h-tm { left: calc(50% - .4375rem); top: -.5rem; } html:root .h-bm { left: calc(50% - .4375rem); bottom: -.5rem; }
+  html:root .tools li { max-width: 4.25rem; }
+  html:root .about :is(.about-copy, .about-side) p { font-size: 1rem; }
+  html:root .mountain-rim { --mh: clamp(3.75rem, 7.6vw, 6.9rem); }
+  html:root .services .services-title { font-size: clamp(4rem, 9vw, 8.06rem); }
+  html:root .band-wide { font-size: 3.125rem; }
+  html:root .contact .contact-body h2 { font-size: clamp(2.4rem, 7vw, 3.81rem); }
+  html:root .reelgrp { width: min(100%, calc(var(--n) * 18.75rem + (var(--n) - 1) * var(--gap))); }
+  html:root .reels .reelgrp { width: min(calc(var(--n) * 18.75rem + (var(--n) - 1) * var(--gap)), calc(100vw - 2 * var(--rp))); }
+  html:root .reelgrp-play { width: 3.25rem; }
+  html:root .vcard-play { width: 4.5rem; height: 4.5rem; }
+  html:root .feature-play { width: clamp(3.5rem, 6vw, 5.25rem); }
+}
+@media (min-width: 6000px) { html:root { font-size: 64px; } } /* scaling stops at 6000px (6000 / 93.75 = 64px) */

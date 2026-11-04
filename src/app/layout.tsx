@@ -29,14 +29,14 @@ export const viewport: Viewport = { themeColor: "#e4e4e4", width: "device-width"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${anton.variable} ${bebasLocal.variable} ${league.variable} ${days.variable} ${dela.variable} ${sancreek.variable} ${bebas.variable} ${barlow.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${anton.variable} ${bebasLocal.variable} ${league.variable} ${days.variable} ${dela.variable} ${sancreek.variable} ${bebas.variable} ${barlow.variable}`}>
       <head>
         {/* Acumin Pro is an Adobe Fonts family: add it to a web project there and set NEXT_PUBLIC_ADOBE_KIT_ID */}
         {process.env.NEXT_PUBLIC_ADOBE_KIT_ID && <link rel="stylesheet" href={`https://use.typekit.net/${process.env.NEXT_PUBLIC_ADOBE_KIT_ID}.css`} />}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "document.documentElement.classList.add('js')",
+              "document.documentElement.classList.add('js');",
           }}
         />
       </head>
