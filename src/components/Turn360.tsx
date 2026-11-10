@@ -2,8 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-// About figure: public/portrait/turn360.webm is the client's 360 orbit clip with the grey studio backdrop keyed out (VP9 + alpha, 450x800,
-// 7s, one full turn that loops). turn360-poster.webp is its first frame, shown for reduced motion and by browsers without VP9 alpha (Safari).
+// About figure: public/portrait/figure-turn.webm is the client green-screen turn clip keyed to alpha (VP9 + alpha, 540x960, 8s loop, camera push-in stabilised so the figure keeps a constant size; per-pixel green-dominance key + despill, see git history).
 export function Turn360({ label }: { label: string }) {
   const v = useRef<HTMLVideoElement>(null);
   useEffect(() => {
@@ -11,8 +10,8 @@ export function Turn360({ label }: { label: string }) {
     v.current?.play().catch(() => {});
   }, []);
   return (
-    <video ref={v} muted loop playsInline preload="auto" poster="/portrait/turn360-poster.webp" width={450} height={800} aria-label={label}>
-      <source src="/portrait/turn360.webm" type="video/webm" />
+    <video ref={v} muted loop playsInline preload="auto" poster="/portrait/figure-turn-poster.webp" width={540} height={960} aria-label={label}>
+      <source src="/portrait/figure-turn.webm" type="video/webm" />
     </video>
   );
 }
